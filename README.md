@@ -65,3 +65,23 @@ In order for a guest to check in, an ADR-036 offline signature must be generated
  
 
 This prevents the guests ticket from being consumed, without their consent.
+
+
+## Infrastructure Cost Estimates (initial + 1 year) (70K - 150K)
+
+### Smart Contracts 
+costs: 
+- initial development: 30K
+- external audits: 5K - 30K
+
+### Front End & Indexer
+- initial development: 30 - 60K 
+- hosting: 2.5 - 5K per year **
+- akash deployment cost: dynamic based on event timeline (ticket presale, etc) 
+
+### Eigenlayer AVS
+- off-chain payment verification infrastructre:
+    - ETH L1 settlement gas fees: per event basis (1-10k)
+
+## Governance 
+Explore investor DAO structure: https://docs.daodao.zone/
