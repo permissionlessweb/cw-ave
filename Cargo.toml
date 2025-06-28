@@ -1,0 +1,53 @@
+[workspace]
+name = "cw-ave"
+exclude = [ ]
+members =  [
+  "contracts/*",
+  "packages/*",
+]
+resolver = "2"
+
+[workspace.package]
+license = "BSD-3-Clause"
+repository = "https://github.com/shitmos/shitstrap"
+edition = "2021"
+resolver = "2"
+version = "0.0.1"
+authors = ["hard-nett <hardnettt@proton.me>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[profile.release]
+codegen-units = 1
+debug = false
+debug-assertions = false
+incremental = false
+lto = true
+opt-level = 3
+panic = 'abort'
+rpath = false
+# Please do not disable these. Doing so will cause overflow checks in
+# all workspace members to stop working. Overflows should be errors.
+overflow-checks = true
+
+[workspace.dependencies]
+cosmwasm-schema = "2.2.2"
+cosmwasm-std = { version = "2.2.2" }
+sha2 = { version = "0.10.2", default-features = false }
+cw-storage-plus = "2.0.0"
+cosmos-sdk-proto = "0.27.0"
+cw2 = "2.0.0"
+cw4 = "2.0.0"
+cw20 = "2.0.0"
+cw20-base = "2.0.0"
+cw-orch = "0.28.0"
+cw-denom = "2.6.0"
+cw-controllers = "2.0.0"
+schemars = "0.8.22"
+serde = { version = "1.0.219", default-features = false, features = ["derive"] }
+thiserror = { version = "2.0.12" }
+cw-utils = "2.0.0"
+cw-ownable = "2.1.0"
+easy-addr = { path = "packages/easy-addr" }
+cw420 = { path = "contracts/cw420" }
