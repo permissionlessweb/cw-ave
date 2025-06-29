@@ -49,6 +49,12 @@ pub struct TicketDetails {
 }
 
 #[cw_serde]
+pub struct TicketPaymentOptionResponse {
+    pub guest_type: String,
+    pub payment_options: Vec<Coin>,
+}
+
+#[cw_serde]
 pub struct GuestDetails {
     /// label specific to type of guest
     pub guest_type: String,
@@ -61,6 +67,7 @@ pub struct GuestDetails {
     // pub overbooking_limit: u32,
     /// array of coins accepted for ticket
     pub ticket_cost: Vec<Coin>,
+    pub event_segment_access: EventSegmentAccessType,
 }
 
 pub fn generate_instantiate_salt2(checksum: &Checksum, namespace: &[u8]) -> Binary {
@@ -70,4 +77,12 @@ pub fn generate_instantiate_salt2(checksum: &Checksum, namespace: &[u8]) -> Bina
     let mut result = checksum_hash.to_vec();
     result.extend_from_slice(namespace);
     Binary::new(result)
+}
+
+#[cosmwasm_schema::cw_serde]
+pub enum EventSegmentAccessType {
+    // guest once checked into one segment is checked into all segments
+    AllSegments {},
+    // 
+    SpecificSegments { ids: Vec<String> },
 }

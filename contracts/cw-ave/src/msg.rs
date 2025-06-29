@@ -1,8 +1,12 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_std::Coin;
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 
-use crate::state::{CheckInDetails, Config, EventSegments, GuestDetails, RegisteringGuest};
+use crate::state::{
+    CheckInDetails, Config, EventSegments, GuestDetails, RegisteringGuest,
+    TicketPaymentOptionResponse,
+};
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -13,11 +17,13 @@ pub struct InstantiateMsg {
     pub title: String,
     /// description of shitstrap for recordkeeping
     pub description: String,
-    /// list of admin keys able to manually modify event attendee contract
+    /// list of admin keys able to checkin guests
     pub usher_admins: Vec<Member>,
+    /// details of each type of guest attendees can participate as
     pub guest_details: Vec<GuestDetails>,
     /// code-id of cw420 contract
     pub cw420: u64,
+    /// timeline of events segments
     pub event_timeline: Vec<EventSegments>,
 }
 
@@ -56,4 +62,8 @@ pub enum QueryMsg {
     GuestAttendanceStatus { guest: String, event_stage_id: u64 },
     #[returns(Vec<bool>)]
     GuestAttendanceStatusALL { guest: String },
+    #[returns(TicketPaymentOptionResponse)]
+    TicketPaymentOptionsByGuestType { guest_type: String },
+    #[returns(Vec<TicketPaymentOptionResponse>)]
+    AllTicketPaymentOptions {},
 }

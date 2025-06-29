@@ -2,27 +2,25 @@ use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg};
 use crate::state::{
     generate_instantiate_salt2, CheckInDetails, Config, EventSegments, RegisteringGuest,
-    TicketDetails, ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS, GUEST_WEIGHT_BY_TYPE,
-    RESERVED_TICKETS,
+    TicketDetails, TicketPaymentOptionResponse, ATTENDANCE_RECORD, CONFIG, EVENT_STAGES,
+    GUEST_DETAILS, GUEST_WEIGHT_BY_TYPE, RESERVED_TICKETS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    coins, from_json, instantiate2_address, to_json_binary, Addr, Attribute, BankMsg, Binary, Coin,
-    CosmosMsg, Decimal, Deps, DepsMut, Env, Fraction, GrpcQuery, MessageInfo, Response, StdError,
-    StdResult, Uint128, WasmMsg,
+    from_json, instantiate2_address, to_json_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps,
+    DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-shit-strap";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const UNS: &[u8] = b"ushers";
-pub const GNS: &[u8] = b"guests";
+pub const NAMESPACE: &[u8] = b"aves";
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -76,14 +74,16 @@ pub fn instantiate(
 
     // setup cw420 groups
     let cw721_checksum = deps.querier.query_wasm_code_info(msg.cw420)?;
-    let usher_salt = generate_instantiate_salt2(&cw721_checksum.checksum, UNS);
+    let usher_salt = generate_instantiate_salt2(&cw721_checksum.checksum, NAMESPACE);
     let mut guest_salt_data = usher_salt.to_vec();
     guest_salt_data[0] ^= 1; // Flip the first byte to ensure it's different
     let guest_salt = Binary::new(guest_salt_data);
 
+    let contract_address = deps.api.addr_canonicalize(env.contract.address.as_str())?;
+
     let usher_cw420 = match instantiate2_address(
         cw721_checksum.checksum.as_slice(),
-        &deps.api.addr_canonicalize(env.contract.address.as_str())?,
+        &contract_address,
         usher_salt.as_slice(),
     ) {
         Ok(addr) => addr,
@@ -91,7 +91,7 @@ pub fn instantiate(
     };
     let guest_cw420 = match instantiate2_address(
         cw721_checksum.checksum.as_slice(),
-        &deps.api.addr_canonicalize(env.contract.address.as_str())?,
+        &contract_address,
         guest_salt.as_slice(),
     ) {
         Ok(addr) => addr,
@@ -191,6 +191,32 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             }
             to_json_binary(&attendance_status)
         }
+        QueryMsg::TicketPaymentOptionsByGuestType { guest_type } => {
+            match GUEST_WEIGHT_BY_TYPE.may_load(deps.storage, &guest_type)? {
+                Some(gw) => {
+                    return Ok(to_json_binary(&TicketPaymentOptionResponse {
+                        guest_type,
+                        payment_options: GUEST_DETAILS.load(deps.storage, gw)?.ticket_cost,
+                    })?)
+                }
+                None => {
+                    return Err(StdError::generic_err(
+                        "this guest type does not exist for this event",
+                    ))
+                }
+            }
+        }
+        QueryMsg::AllTicketPaymentOptions {} => Ok(to_json_binary(
+            &GUEST_DETAILS
+                .range(deps.storage, None, None, Order::Ascending)
+                .map(|res| {
+                    res.map(|(_, guest_details)| TicketPaymentOptionResponse {
+                        guest_type: guest_details.guest_type,
+                        payment_options: guest_details.ticket_cost,
+                    })
+                })
+                .collect::<StdResult<Vec<TicketPaymentOptionResponse>>>()?,
+        )?),
     }
 }
 
