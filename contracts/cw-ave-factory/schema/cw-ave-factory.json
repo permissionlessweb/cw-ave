@@ -160,6 +160,47 @@
         },
         "additionalProperties": false
       },
+      "EventSegmentAccessType": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "all_segments"
+            ],
+            "properties": {
+              "all_segments": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "specific_segments"
+            ],
+            "properties": {
+              "specific_segments": {
+                "type": "object",
+                "required": [
+                  "ids"
+                ],
+                "properties": {
+                  "ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
       "EventSegments": {
         "description": "Defines timelengths of a specific stage of an event. For example, a private screening could have 2 shows, so we define the start and end for both.",
         "type": "object",
@@ -231,14 +272,16 @@
       "GuestDetails": {
         "type": "object",
         "required": [
+          "event_segment_access",
           "guest_type",
           "guest_weight",
-          "max_guest_limit",
           "max_ticket_limit",
-          "overbooking_limit",
           "ticket_cost"
         ],
         "properties": {
+          "event_segment_access": {
+            "$ref": "#/definitions/EventSegmentAccessType"
+          },
           "guest_type": {
             "description": "label specific to type of guest",
             "type": "string"
@@ -249,25 +292,14 @@
             "format": "uint64",
             "minimum": 0.0
           },
-          "max_guest_limit": {
-            "description": "limit to number of this type of guest",
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0.0
-          },
           "max_ticket_limit": {
             "description": "limit to number of tickets a guest can purchase",
             "type": "integer",
             "format": "uint32",
             "minimum": 0.0
           },
-          "overbooking_limit": {
-            "type": "integer",
-            "format": "uint32",
-            "minimum": 0.0
-          },
           "ticket_cost": {
-            "description": "array of coins accepted for ticket",
+            "description": "limit to number of this type of guests array of coins accepted for ticket",
             "type": "array",
             "items": {
               "$ref": "#/definitions/Coin"
@@ -305,12 +337,14 @@
             ]
           },
           "event_timeline": {
+            "description": "timeline of events segments",
             "type": "array",
             "items": {
               "$ref": "#/definitions/EventSegments"
             }
           },
           "guest_details": {
+            "description": "details of each type of guest attendees can participate as",
             "type": "array",
             "items": {
               "$ref": "#/definitions/GuestDetails"
@@ -321,7 +355,7 @@
             "type": "string"
           },
           "usher_admins": {
-            "description": "list of admin keys able to manually modify event attendee contract",
+            "description": "list of admin keys able to checkin guests",
             "type": "array",
             "items": {
               "$ref": "#/definitions/Member"

@@ -29,7 +29,7 @@ codegen({
       enabled: true,
       optionalClient: false,
       version: 'v4',
-      mutations: true,
+      mutations: false,
       queryKeys: true,
       queryFactory: true,
     },
