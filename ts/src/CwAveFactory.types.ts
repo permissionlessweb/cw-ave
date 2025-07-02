@@ -28,10 +28,10 @@ export type ExecuteMsg = {
 export type Timestamp = Uint64;
 export type Uint64 = string;
 export type EventSegmentAccessType = {
-  all_segments: {};
+  single_segment: {};
 } | {
   specific_segments: {
-    ids: string[];
+    ids: number[];
   };
 };
 export type Uint128 = string;

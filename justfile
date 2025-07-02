@@ -4,12 +4,12 @@ workspace-optimize:
             --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
             --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
             --platform linux/arm64 \
-            cosmwasm/optimizer-arm64:0.16.0; \
+            cosmwasm/optimizer-arm64:0.16.1; \
     elif [[ $(uname -m) == 'x86_64' ]]; then docker run --rm -v "$(pwd)":/code \
             --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
             --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
             --platform linux/amd64 \
-            cosmwasm/optimizer:0.16.0; fi
-run-schema:
+            cosmwasm/optimizer:0.16.1; fi
+schema:
     #!/bin/bash
-    sh scripts/schema.sh
+    sh scripts/schema-and-codegen.sh

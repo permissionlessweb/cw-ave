@@ -163,12 +163,13 @@
       "EventSegmentAccessType": {
         "oneOf": [
           {
+            "description": "only checkin for this segment, not checking in for any other segement.",
             "type": "object",
             "required": [
-              "all_segments"
+              "single_segment"
             ],
             "properties": {
-              "all_segments": {
+              "single_segment": {
                 "type": "object",
                 "additionalProperties": false
               }
@@ -176,6 +177,7 @@
             "additionalProperties": false
           },
           {
+            "description": "once checked in to this segment, guest is also checked into all other segments set here.",
             "type": "object",
             "required": [
               "specific_segments"
@@ -190,7 +192,9 @@
                   "ids": {
                     "type": "array",
                     "items": {
-                      "type": "string"
+                      "type": "integer",
+                      "format": "uint64",
+                      "minimum": 0.0
                     }
                   }
                 },

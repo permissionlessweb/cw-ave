@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, Cw20ReceiveMsg, RegisteringGuest, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOptionResponse, TicketPaymentOptionResponse, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, Cw20ReceiveMsg, RegisteringGuest, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 export interface CwAveMsg {
   contractAddress: string;
   sender: string;
@@ -26,11 +26,9 @@ export interface CwAveMsg {
     guests: RegisteringGuest[];
   }, funds_?: Coin[]) => MsgExecuteContractEncodeObject;
   checkInGuest: ({
-    checkin,
-    stage
+    checkin
   }: {
     checkin: CheckInDetails;
-    stage: number;
   }, funds_?: Coin[]) => MsgExecuteContractEncodeObject;
   refundUnconfirmedTickets: ({
     guests
@@ -96,11 +94,9 @@ export class CwAveMsgComposer implements CwAveMsg {
     };
   };
   checkInGuest = ({
-    checkin,
-    stage
+    checkin
   }: {
     checkin: CheckInDetails;
-    stage: number;
   }, funds_?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -109,8 +105,7 @@ export class CwAveMsgComposer implements CwAveMsg {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           check_in_guest: {
-            checkin,
-            stage
+            checkin
           }
         })),
         funds: funds_

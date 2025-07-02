@@ -4,6 +4,9 @@
 - purchasing tickets: implement escrow logic
 - event segments: improve implementation for presale and escrow handling
 - events: implement fully private events (black hole tech)
+- resale orderbook: ask-less orderbook 
+- 
+
 
 Av Events are disposiable (single use) smart contract, for coordination of IRL event ticket sales and use. In this repo there are two contracts:
 

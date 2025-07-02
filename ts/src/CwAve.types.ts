@@ -7,10 +7,10 @@
 export type Timestamp = Uint64;
 export type Uint64 = string;
 export type EventSegmentAccessType = {
-  all_segments: {};
+  single_segment: {};
 } | {
   specific_segments: {
-    ids: string[];
+    ids: number[];
   };
 };
 export type Uint128 = string;
@@ -52,7 +52,6 @@ export type ExecuteMsg = {
 } | {
   check_in_guest: {
     checkin: CheckInDetails;
-    stage: number;
   };
 } | {
   refund_unconfirmed_tickets: {
@@ -66,12 +65,13 @@ export interface Cw20ReceiveMsg {
   sender: string;
 }
 export interface RegisteringGuest {
-  guest_type: string;
+  guest_weight: number;
   ticket_wallet: string;
 }
 export interface CheckInDetails {
   pubkey: Binary;
   signature: Binary;
+  signed_data: string;
   ticket_addr: string;
 }
 export type QueryMsg = {
@@ -79,23 +79,29 @@ export type QueryMsg = {
 } | {
   event_segments: {};
 } | {
+  guest_type_details_by_weight: {
+    guest_weight: number;
+  };
+} | {
+  guest_type_details_all: {};
+} | {
   guest_attendance_status: {
     event_stage_id: number;
     guest: string;
   };
 } | {
-  guest_attendance_status_a_l_l: {
+  guest_attendance_status_all: {
     guest: string;
   };
 } | {
-  ticket_payment_options_by_guest_type: {
-    guest_type: string;
+  ticket_payment_options_by_guest_weight: {
+    guest_weight: number;
   };
 } | {
   all_ticket_payment_options: {};
 };
-export type ArrayOfTicketPaymentOptionResponse = TicketPaymentOptionResponse[];
-export interface TicketPaymentOptionResponse {
+export type ArrayOfTicketPaymentOption = TicketPaymentOption[];
+export interface TicketPaymentOption {
   guest_type: string;
   payment_options: Coin[];
 }
@@ -109,3 +115,4 @@ export interface Config {
 export type ArrayOfEventSegments = EventSegments[];
 export type Boolean = boolean;
 export type ArrayOfBoolean = boolean[];
+export type ArrayOfGuestDetails = GuestDetails[];

@@ -5,7 +5,7 @@
 */
 
 import { UseQueryOptions, useQuery } from "@tanstack/react-query";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, Cw20ReceiveMsg, RegisteringGuest, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOptionResponse, TicketPaymentOptionResponse, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, Cw20ReceiveMsg, RegisteringGuest, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 import { CwAveQueryClient } from "./CwAve.client";
 export const cwAveQueryKeys = {
   contract: ([{
@@ -22,16 +22,24 @@ export const cwAveQueryKeys = {
     method: "event_segments",
     args
   }] as const),
+  guestTypeDetailsByWeight: (contractAddress: string, args?: Record<string, unknown>) => ([{ ...cwAveQueryKeys.address(contractAddress)[0],
+    method: "guest_type_details_by_weight",
+    args
+  }] as const),
+  guestTypeDetailsAll: (contractAddress: string, args?: Record<string, unknown>) => ([{ ...cwAveQueryKeys.address(contractAddress)[0],
+    method: "guest_type_details_all",
+    args
+  }] as const),
   guestAttendanceStatus: (contractAddress: string, args?: Record<string, unknown>) => ([{ ...cwAveQueryKeys.address(contractAddress)[0],
     method: "guest_attendance_status",
     args
   }] as const),
-  guestAttendanceStatusALL: (contractAddress: string, args?: Record<string, unknown>) => ([{ ...cwAveQueryKeys.address(contractAddress)[0],
-    method: "guest_attendance_status_a_l_l",
+  guestAttendanceStatusAll: (contractAddress: string, args?: Record<string, unknown>) => ([{ ...cwAveQueryKeys.address(contractAddress)[0],
+    method: "guest_attendance_status_all",
     args
   }] as const),
-  ticketPaymentOptionsByGuestType: (contractAddress: string, args?: Record<string, unknown>) => ([{ ...cwAveQueryKeys.address(contractAddress)[0],
-    method: "ticket_payment_options_by_guest_type",
+  ticketPaymentOptionsByGuestWeight: (contractAddress: string, args?: Record<string, unknown>) => ([{ ...cwAveQueryKeys.address(contractAddress)[0],
+    method: "ticket_payment_options_by_guest_weight",
     args
   }] as const),
   allTicketPaymentOptions: (contractAddress: string, args?: Record<string, unknown>) => ([{ ...cwAveQueryKeys.address(contractAddress)[0],
@@ -58,6 +66,27 @@ export const cwAveQueries = {
     ...options,
     enabled: !!client && (options?.enabled != undefined ? options.enabled : true)
   }),
+  guestTypeDetailsByWeight: <TData = GuestDetails,>({
+    client,
+    args,
+    options
+  }: CwAveGuestTypeDetailsByWeightQuery<TData>): UseQueryOptions<GuestDetails, Error, TData> => ({
+    queryKey: cwAveQueryKeys.guestTypeDetailsByWeight(client?.contractAddress, args),
+    queryFn: () => client.guestTypeDetailsByWeight({
+      guestWeight: args.guestWeight
+    }),
+    ...options,
+    enabled: !!client && (options?.enabled != undefined ? options.enabled : true)
+  }),
+  guestTypeDetailsAll: <TData = ArrayOfGuestDetails,>({
+    client,
+    options
+  }: CwAveGuestTypeDetailsAllQuery<TData>): UseQueryOptions<ArrayOfGuestDetails, Error, TData> => ({
+    queryKey: cwAveQueryKeys.guestTypeDetailsAll(client?.contractAddress),
+    queryFn: () => client.guestTypeDetailsAll(),
+    ...options,
+    enabled: !!client && (options?.enabled != undefined ? options.enabled : true)
+  }),
   guestAttendanceStatus: <TData = Boolean,>({
     client,
     args,
@@ -71,34 +100,34 @@ export const cwAveQueries = {
     ...options,
     enabled: !!client && (options?.enabled != undefined ? options.enabled : true)
   }),
-  guestAttendanceStatusALL: <TData = ArrayOfBoolean,>({
+  guestAttendanceStatusAll: <TData = ArrayOfBoolean,>({
     client,
     args,
     options
-  }: CwAveGuestAttendanceStatusALLQuery<TData>): UseQueryOptions<ArrayOfBoolean, Error, TData> => ({
-    queryKey: cwAveQueryKeys.guestAttendanceStatusALL(client?.contractAddress, args),
-    queryFn: () => client.guestAttendanceStatusALL({
+  }: CwAveGuestAttendanceStatusAllQuery<TData>): UseQueryOptions<ArrayOfBoolean, Error, TData> => ({
+    queryKey: cwAveQueryKeys.guestAttendanceStatusAll(client?.contractAddress, args),
+    queryFn: () => client.guestAttendanceStatusAll({
       guest: args.guest
     }),
     ...options,
     enabled: !!client && (options?.enabled != undefined ? options.enabled : true)
   }),
-  ticketPaymentOptionsByGuestType: <TData = TicketPaymentOptionResponse,>({
+  ticketPaymentOptionsByGuestWeight: <TData = TicketPaymentOption,>({
     client,
     args,
     options
-  }: CwAveTicketPaymentOptionsByGuestTypeQuery<TData>): UseQueryOptions<TicketPaymentOptionResponse, Error, TData> => ({
-    queryKey: cwAveQueryKeys.ticketPaymentOptionsByGuestType(client?.contractAddress, args),
-    queryFn: () => client.ticketPaymentOptionsByGuestType({
-      guestType: args.guestType
+  }: CwAveTicketPaymentOptionsByGuestWeightQuery<TData>): UseQueryOptions<TicketPaymentOption, Error, TData> => ({
+    queryKey: cwAveQueryKeys.ticketPaymentOptionsByGuestWeight(client?.contractAddress, args),
+    queryFn: () => client.ticketPaymentOptionsByGuestWeight({
+      guestWeight: args.guestWeight
     }),
     ...options,
     enabled: !!client && (options?.enabled != undefined ? options.enabled : true)
   }),
-  allTicketPaymentOptions: <TData = ArrayOfTicketPaymentOptionResponse,>({
+  allTicketPaymentOptions: <TData = ArrayOfTicketPaymentOption,>({
     client,
     options
-  }: CwAveAllTicketPaymentOptionsQuery<TData>): UseQueryOptions<ArrayOfTicketPaymentOptionResponse, Error, TData> => ({
+  }: CwAveAllTicketPaymentOptionsQuery<TData>): UseQueryOptions<ArrayOfTicketPaymentOption, Error, TData> => ({
     queryKey: cwAveQueryKeys.allTicketPaymentOptions(client?.contractAddress),
     queryFn: () => client.allTicketPaymentOptions(),
     ...options,
@@ -111,38 +140,38 @@ export interface CwAveReactQuery<TResponse, TData = TResponse> {
     initialData?: undefined;
   };
 }
-export interface CwAveAllTicketPaymentOptionsQuery<TData> extends CwAveReactQuery<ArrayOfTicketPaymentOptionResponse, TData> {}
-export function useCwAveAllTicketPaymentOptionsQuery<TData = ArrayOfTicketPaymentOptionResponse>({
+export interface CwAveAllTicketPaymentOptionsQuery<TData> extends CwAveReactQuery<ArrayOfTicketPaymentOption, TData> {}
+export function useCwAveAllTicketPaymentOptionsQuery<TData = ArrayOfTicketPaymentOption>({
   client,
   options
 }: CwAveAllTicketPaymentOptionsQuery<TData>) {
-  return useQuery<ArrayOfTicketPaymentOptionResponse, Error, TData>(cwAveQueryKeys.allTicketPaymentOptions(client.contractAddress), () => client.allTicketPaymentOptions(), options);
+  return useQuery<ArrayOfTicketPaymentOption, Error, TData>(cwAveQueryKeys.allTicketPaymentOptions(client.contractAddress), () => client.allTicketPaymentOptions(), options);
 }
-export interface CwAveTicketPaymentOptionsByGuestTypeQuery<TData> extends CwAveReactQuery<TicketPaymentOptionResponse, TData> {
+export interface CwAveTicketPaymentOptionsByGuestWeightQuery<TData> extends CwAveReactQuery<TicketPaymentOption, TData> {
   args: {
-    guestType: string;
+    guestWeight: number;
   };
 }
-export function useCwAveTicketPaymentOptionsByGuestTypeQuery<TData = TicketPaymentOptionResponse>({
+export function useCwAveTicketPaymentOptionsByGuestWeightQuery<TData = TicketPaymentOption>({
   client,
   args,
   options
-}: CwAveTicketPaymentOptionsByGuestTypeQuery<TData>) {
-  return useQuery<TicketPaymentOptionResponse, Error, TData>(cwAveQueryKeys.ticketPaymentOptionsByGuestType(client.contractAddress, args), () => client.ticketPaymentOptionsByGuestType({
-    guestType: args.guestType
+}: CwAveTicketPaymentOptionsByGuestWeightQuery<TData>) {
+  return useQuery<TicketPaymentOption, Error, TData>(cwAveQueryKeys.ticketPaymentOptionsByGuestWeight(client.contractAddress, args), () => client.ticketPaymentOptionsByGuestWeight({
+    guestWeight: args.guestWeight
   }), options);
 }
-export interface CwAveGuestAttendanceStatusALLQuery<TData> extends CwAveReactQuery<ArrayOfBoolean, TData> {
+export interface CwAveGuestAttendanceStatusAllQuery<TData> extends CwAveReactQuery<ArrayOfBoolean, TData> {
   args: {
     guest: string;
   };
 }
-export function useCwAveGuestAttendanceStatusALLQuery<TData = ArrayOfBoolean>({
+export function useCwAveGuestAttendanceStatusAllQuery<TData = ArrayOfBoolean>({
   client,
   args,
   options
-}: CwAveGuestAttendanceStatusALLQuery<TData>) {
-  return useQuery<ArrayOfBoolean, Error, TData>(cwAveQueryKeys.guestAttendanceStatusALL(client.contractAddress, args), () => client.guestAttendanceStatusALL({
+}: CwAveGuestAttendanceStatusAllQuery<TData>) {
+  return useQuery<ArrayOfBoolean, Error, TData>(cwAveQueryKeys.guestAttendanceStatusAll(client.contractAddress, args), () => client.guestAttendanceStatusAll({
     guest: args.guest
   }), options);
 }
@@ -160,6 +189,27 @@ export function useCwAveGuestAttendanceStatusQuery<TData = Boolean>({
   return useQuery<Boolean, Error, TData>(cwAveQueryKeys.guestAttendanceStatus(client.contractAddress, args), () => client.guestAttendanceStatus({
     eventStageId: args.eventStageId,
     guest: args.guest
+  }), options);
+}
+export interface CwAveGuestTypeDetailsAllQuery<TData> extends CwAveReactQuery<ArrayOfGuestDetails, TData> {}
+export function useCwAveGuestTypeDetailsAllQuery<TData = ArrayOfGuestDetails>({
+  client,
+  options
+}: CwAveGuestTypeDetailsAllQuery<TData>) {
+  return useQuery<ArrayOfGuestDetails, Error, TData>(cwAveQueryKeys.guestTypeDetailsAll(client.contractAddress), () => client.guestTypeDetailsAll(), options);
+}
+export interface CwAveGuestTypeDetailsByWeightQuery<TData> extends CwAveReactQuery<GuestDetails, TData> {
+  args: {
+    guestWeight: number;
+  };
+}
+export function useCwAveGuestTypeDetailsByWeightQuery<TData = GuestDetails>({
+  client,
+  args,
+  options
+}: CwAveGuestTypeDetailsByWeightQuery<TData>) {
+  return useQuery<GuestDetails, Error, TData>(cwAveQueryKeys.guestTypeDetailsByWeight(client.contractAddress, args), () => client.guestTypeDetailsByWeight({
+    guestWeight: args.guestWeight
   }), options);
 }
 export interface CwAveEventSegmentsQuery<TData> extends CwAveReactQuery<ArrayOfEventSegments, TData> {}

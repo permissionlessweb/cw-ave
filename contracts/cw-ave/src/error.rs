@@ -1,4 +1,4 @@
-use cosmwasm_std::{DecimalRangeExceeded, Instantiate2AddressError, StdError};
+use cosmwasm_std::{DecimalRangeExceeded, Instantiate2AddressError, StdError, VerificationError};
 use cw_denom::DenomError;
 use thiserror::Error;
 
@@ -6,6 +6,9 @@ use thiserror::Error;
 pub enum ContractError {
     #[error("{0}")]
     StdError(#[from] StdError),
+    
+    #[error("{0}")]
+    VerificationError(#[from] VerificationError),
 
     #[error("{0}")]
     Instantiate2AddressError(#[from] Instantiate2AddressError),

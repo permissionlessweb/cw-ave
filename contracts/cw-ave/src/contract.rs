@@ -1,16 +1,16 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg};
 use crate::state::{
-    generate_instantiate_salt2, CheckInDetails, Config, EventSegments, RegisteringGuest,
-    TicketDetails, TicketPaymentOptionResponse, ATTENDANCE_RECORD, CONFIG, EVENT_STAGES,
-    GUEST_DETAILS, GUEST_WEIGHT_BY_TYPE, RESERVED_TICKETS,
+    generate_instantiate_salt2, preamble_msg_arb_036, sha256, CheckInDetails, CheckInSignatureData,
+    Config, EventSegments, GuestDetails, RegisteringGuest, TicketDetails, TicketPaymentOption,
+    ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS, RESERVED_TICKETS,
 };
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
     from_json, instantiate2_address, to_json_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps,
-    DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult, Uint128, WasmMsg,
+    DepsMut, Env, MessageInfo, Order, Response, StdResult, Storage, Uint128, WasmMsg,
 };
 use cw2::set_contract_version;
 use cw20::Cw20ReceiveMsg;
@@ -44,8 +44,7 @@ pub fn instantiate(
         match GUEST_DETAILS.may_load(deps.storage, dt.guest_weight)? {
             Some(_) => return Err(ContractError::DuplicateGuestWeight {}),
             None => {
-                GUEST_WEIGHT_BY_TYPE.save(deps.storage, &dt.guest_type, &dt.guest_weight)?;
-                GUEST_DETAILS.save(deps.storage, dt.guest_weight, &dt)?
+                GUEST_DETAILS.save(deps.storage, dt.guest_weight, &dt)?;
             }
         }
     }
@@ -69,7 +68,8 @@ pub fn instantiate(
         }
 
         // Save the event stage
-        EVENT_STAGES.save(deps.storage, &event.stage_description, &event)?;
+        let event_stage_id = i + 1;
+        EVENT_STAGES.save(deps.storage, event_stage_id as u64, &event)?;
     }
 
     // setup cw420 groups
@@ -155,9 +155,7 @@ pub fn execute(
         ExecuteMsg::RefundUnconfirmedTickets { guests } => {
             refund_unconfirmed_ticket_purchase(deps, info, guests)
         }
-        ExecuteMsg::CheckInGuest { stage, checkin } => {
-            perform_checkin_guest(deps, info, stage, checkin)
-        }
+        ExecuteMsg::CheckInGuest { checkin } => perform_checkin_guest(deps, info, checkin),
     }
 }
 
@@ -182,7 +180,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .may_load(deps.storage, (&guest, event_stage_id))?
                 .unwrap_or_default(),
         ),
-        QueryMsg::GuestAttendanceStatusALL { guest } => {
+        QueryMsg::GuestAttendanceStatusAll { guest } => {
             let mut attendance_status = Vec::new();
             let prefix = ATTENDANCE_RECORD.prefix(&guest);
             for item in prefix.range(deps.storage, None, None, cosmwasm_std::Order::Ascending) {
@@ -191,31 +189,32 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             }
             to_json_binary(&attendance_status)
         }
-        QueryMsg::TicketPaymentOptionsByGuestType { guest_type } => {
-            match GUEST_WEIGHT_BY_TYPE.may_load(deps.storage, &guest_type)? {
-                Some(gw) => {
-                    return Ok(to_json_binary(&TicketPaymentOptionResponse {
-                        guest_type,
-                        payment_options: GUEST_DETAILS.load(deps.storage, gw)?.ticket_cost,
-                    })?)
-                }
-                None => {
-                    return Err(StdError::generic_err(
-                        "this guest type does not exist for this event",
-                    ))
-                }
-            }
+        QueryMsg::TicketPaymentOptionsByGuestWeight { guest_weight } => {
+            let gd = GUEST_DETAILS.load(deps.storage, guest_weight)?;
+            Ok(to_json_binary(&TicketPaymentOption {
+                guest_type: gd.guest_type,
+                payment_options: gd.ticket_cost,
+            })?)
         }
         QueryMsg::AllTicketPaymentOptions {} => Ok(to_json_binary(
             &GUEST_DETAILS
                 .range(deps.storage, None, None, Order::Ascending)
                 .map(|res| {
-                    res.map(|(_, guest_details)| TicketPaymentOptionResponse {
+                    res.map(|(_, guest_details)| TicketPaymentOption {
                         guest_type: guest_details.guest_type,
                         payment_options: guest_details.ticket_cost,
                     })
                 })
-                .collect::<StdResult<Vec<TicketPaymentOptionResponse>>>()?,
+                .collect::<StdResult<Vec<TicketPaymentOption>>>()?,
+        )?),
+        QueryMsg::GuestTypeDetailsByWeight { guest_weight } => Ok(to_json_binary(
+            &GUEST_DETAILS.load(deps.storage, guest_weight)?,
+        )?),
+        QueryMsg::GuestTypeDetailsAll {} => Ok(to_json_binary(
+            &GUEST_DETAILS
+                .range(deps.storage, None, None, Order::Ascending)
+                .map(|res| res.map(|(_, guest_details)| guest_details))
+                .collect::<StdResult<Vec<GuestDetails>>>()?,
         )?),
     }
 }
@@ -224,7 +223,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn perform_checkin_guest(
     deps: DepsMut,
     info: MessageInfo,
-    stage: u64,
     checkin: CheckInDetails,
 ) -> Result<Response, ContractError> {
     // sender must be one of event ushers
@@ -233,19 +231,67 @@ pub fn perform_checkin_guest(
         return Err(ContractError::NotAnEventUsher {});
     };
 
-    // offline signature of guest must be valid & include the following data:
-    // - todo
+    // verify signature came from guest and is valid
+    if !deps.api.secp256k1_verify(
+        &sha256(preamble_msg_arb_036(&checkin.ticket_addr, &checkin.signed_data).as_bytes()),
+        &checkin.signature,
+        &checkin.pubkey,
+    )? {
+        return Err(ContractError::DuplicateGuestWeight {});
+    };
 
-    // update attendance record
-    ATTENDANCE_RECORD.update(deps.storage, (&checkin.ticket_addr, stage), |ci| {
-        if ci.is_some() {
-            return Err(ContractError::GuestAlreadyCheckedIn {});
-        } else {
-            return Ok(true);
+    // parse signed_data to retrieve specific guest weight
+    let signature_data: CheckInSignatureData = from_json(checkin.signed_data)?;
+
+    if let Some(guest_weight) = check_if_cw420_member(
+        deps.as_ref(),
+        &cfg.event_guest_contract,
+        &deps.api.addr_validate(&checkin.ticket_addr)?,
+    )? {
+        let guest_details = GUEST_DETAILS.load(deps.storage, guest_weight)?;
+
+        // recurisvely update guest status for any
+        match guest_details.event_segment_access {
+            crate::state::EventSegmentAccessType::SingleSegment {} => {
+                update_attendance_record(
+                    deps.storage,
+                    &checkin.ticket_addr,
+                    signature_data.event_segment_id,
+                )?;
+            }
+            crate::state::EventSegmentAccessType::SpecificSegments { ids } => {
+                update_attendance_record(
+                    deps.storage,
+                    &checkin.ticket_addr,
+                    signature_data.event_segment_id,
+                )?;
+                for id in ids {
+                    update_attendance_record(deps.storage, &checkin.ticket_addr, id)?;
+                }
+            }
         }
-    })?;
+    } else {
+        return Err(ContractError::GuestTypeIncorrect {});
+    };
 
     Ok(Response::new())
+}
+
+pub fn update_attendance_record(
+    storage: &mut dyn Storage,
+    ticket_addr: &String,
+    event_segment_id: u64,
+) -> Result<bool, ContractError> {
+    ATTENDANCE_RECORD.update(storage, (ticket_addr, event_segment_id), |ci| {
+        if let Some(status) = ci {
+            match status {
+                true => return Err(ContractError::GuestAlreadyCheckedIn {}),
+                false => return Ok(true),
+            }
+        } else {
+            return Err(ContractError::GuestTypeIncorrect {});
+        }
+    })
 }
 /// Entry point to purchase event tickets
 pub fn perform_ticket_purchase(
@@ -258,46 +304,41 @@ pub fn perform_ticket_purchase(
 
     for guest in guests {
         // check if guest type exists
-        match GUEST_WEIGHT_BY_TYPE.may_load(deps.storage, &guest.guest_type)? {
-            None => return Err(ContractError::GuestTypeIncorrect {}),
-            Some(gw) => {
-                let gd = GUEST_DETAILS.load(deps.storage, gw)?;
+        let gd = GUEST_DETAILS.load(deps.storage, guest.guest_weight)?;
 
-                let sent = count_tickets_and_remainder(&info.funds, gd.ticket_cost);
-                msgs.push(form_return_payment_overflow_msgs(&sent.1, &info.sender));
+        let sent = count_tickets_and_remainder(&info.funds, gd.ticket_cost);
+        msgs.push(form_return_payment_overflow_msgs(&sent.1, &info.sender));
 
-                // count how many tickets are being reserved from payment being made
-                let reserved = sent.0;
+        // count how many tickets are being reserved from payment being made
+        let reserved = sent.0;
 
-                // save tickets reserved by the ticket wallet
-                RESERVED_TICKETS.update(deps.storage, &guest.ticket_wallet, |a| match a {
-                    Some(mut td) => {
-                        td.reserved += reserved;
-                        if td.reserved > gd.max_ticket_limit.into() {
-                            return Err(ContractError::CannotReserveTicketCount {});
-                        }
-                        return Ok::<TicketDetails, ContractError>(td);
-                    }
-                    None => {
-                        if reserved < gd.max_ticket_limit.into() {
-                            return Ok(TicketDetails { reserved });
-                        } else {
-                            return Err(ContractError::CannotReserveTicketCount {});
-                        }
-                    }
-                })?;
-
-                // add event guest to guest cw420 list
-                msgs.push(
-                    form_update_guestlist_msg(
-                        &guest.ticket_wallet,
-                        gd.guest_weight,
-                        &cfg.event_guest_contract,
-                    )?
-                    .into(),
-                );
+        // save tickets reserved by the ticket wallet
+        RESERVED_TICKETS.update(deps.storage, &guest.ticket_wallet, |a| match a {
+            Some(mut td) => {
+                td.reserved += reserved;
+                if td.reserved > gd.max_ticket_limit.into() {
+                    return Err(ContractError::CannotReserveTicketCount {});
+                }
+                return Ok::<TicketDetails, ContractError>(td);
             }
-        }
+            None => {
+                if reserved < gd.max_ticket_limit.into() {
+                    return Ok(TicketDetails { reserved });
+                } else {
+                    return Err(ContractError::CannotReserveTicketCount {});
+                }
+            }
+        })?;
+
+        // add event guest to guest cw420 list
+        msgs.push(
+            form_update_guestlist_msg(
+                &guest.ticket_wallet,
+                gd.guest_weight,
+                &cfg.event_guest_contract,
+            )?
+            .into(),
+        );
 
         // if res.weight.is
     }

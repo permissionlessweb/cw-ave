@@ -6,11 +6,17 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, Cw20ReceiveMsg, RegisteringGuest, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOptionResponse, TicketPaymentOptionResponse, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, Cw20ReceiveMsg, RegisteringGuest, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 export interface CwAveReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<Config>;
   eventSegments: () => Promise<ArrayOfEventSegments>;
+  guestTypeDetailsByWeight: ({
+    guestWeight
+  }: {
+    guestWeight: number;
+  }) => Promise<GuestDetails>;
+  guestTypeDetailsAll: () => Promise<ArrayOfGuestDetails>;
   guestAttendanceStatus: ({
     eventStageId,
     guest
@@ -18,17 +24,17 @@ export interface CwAveReadOnlyInterface {
     eventStageId: number;
     guest: string;
   }) => Promise<Boolean>;
-  guestAttendanceStatusALL: ({
+  guestAttendanceStatusAll: ({
     guest
   }: {
     guest: string;
   }) => Promise<ArrayOfBoolean>;
-  ticketPaymentOptionsByGuestType: ({
-    guestType
+  ticketPaymentOptionsByGuestWeight: ({
+    guestWeight
   }: {
-    guestType: string;
-  }) => Promise<TicketPaymentOptionResponse>;
-  allTicketPaymentOptions: () => Promise<ArrayOfTicketPaymentOptionResponse>;
+    guestWeight: number;
+  }) => Promise<TicketPaymentOption>;
+  allTicketPaymentOptions: () => Promise<ArrayOfTicketPaymentOption>;
 }
 export class CwAveQueryClient implements CwAveReadOnlyInterface {
   client: CosmWasmClient;
@@ -39,9 +45,11 @@ export class CwAveQueryClient implements CwAveReadOnlyInterface {
     this.contractAddress = contractAddress;
     this.config = this.config.bind(this);
     this.eventSegments = this.eventSegments.bind(this);
+    this.guestTypeDetailsByWeight = this.guestTypeDetailsByWeight.bind(this);
+    this.guestTypeDetailsAll = this.guestTypeDetailsAll.bind(this);
     this.guestAttendanceStatus = this.guestAttendanceStatus.bind(this);
-    this.guestAttendanceStatusALL = this.guestAttendanceStatusALL.bind(this);
-    this.ticketPaymentOptionsByGuestType = this.ticketPaymentOptionsByGuestType.bind(this);
+    this.guestAttendanceStatusAll = this.guestAttendanceStatusAll.bind(this);
+    this.ticketPaymentOptionsByGuestWeight = this.ticketPaymentOptionsByGuestWeight.bind(this);
     this.allTicketPaymentOptions = this.allTicketPaymentOptions.bind(this);
   }
 
@@ -53,6 +61,22 @@ export class CwAveQueryClient implements CwAveReadOnlyInterface {
   eventSegments = async (): Promise<ArrayOfEventSegments> => {
     return this.client.queryContractSmart(this.contractAddress, {
       event_segments: {}
+    });
+  };
+  guestTypeDetailsByWeight = async ({
+    guestWeight
+  }: {
+    guestWeight: number;
+  }): Promise<GuestDetails> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      guest_type_details_by_weight: {
+        guest_weight: guestWeight
+      }
+    });
+  };
+  guestTypeDetailsAll = async (): Promise<ArrayOfGuestDetails> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      guest_type_details_all: {}
     });
   };
   guestAttendanceStatus = async ({
@@ -69,29 +93,29 @@ export class CwAveQueryClient implements CwAveReadOnlyInterface {
       }
     });
   };
-  guestAttendanceStatusALL = async ({
+  guestAttendanceStatusAll = async ({
     guest
   }: {
     guest: string;
   }): Promise<ArrayOfBoolean> => {
     return this.client.queryContractSmart(this.contractAddress, {
-      guest_attendance_status_a_l_l: {
+      guest_attendance_status_all: {
         guest
       }
     });
   };
-  ticketPaymentOptionsByGuestType = async ({
-    guestType
+  ticketPaymentOptionsByGuestWeight = async ({
+    guestWeight
   }: {
-    guestType: string;
-  }): Promise<TicketPaymentOptionResponse> => {
+    guestWeight: number;
+  }): Promise<TicketPaymentOption> => {
     return this.client.queryContractSmart(this.contractAddress, {
-      ticket_payment_options_by_guest_type: {
-        guest_type: guestType
+      ticket_payment_options_by_guest_weight: {
+        guest_weight: guestWeight
       }
     });
   };
-  allTicketPaymentOptions = async (): Promise<ArrayOfTicketPaymentOptionResponse> => {
+  allTicketPaymentOptions = async (): Promise<ArrayOfTicketPaymentOption> => {
     return this.client.queryContractSmart(this.contractAddress, {
       all_ticket_payment_options: {}
     });
@@ -115,11 +139,9 @@ export interface CwAveInterface extends CwAveReadOnlyInterface {
     guests: RegisteringGuest[];
   }, fee_?: number | StdFee | "auto", memo_?: string, funds_?: Coin[]) => Promise<ExecuteResult>;
   checkInGuest: ({
-    checkin,
-    stage
+    checkin
   }: {
     checkin: CheckInDetails;
-    stage: number;
   }, fee_?: number | StdFee | "auto", memo_?: string, funds_?: Coin[]) => Promise<ExecuteResult>;
   refundUnconfirmedTickets: ({
     guests
@@ -172,16 +194,13 @@ export class CwAveClient extends CwAveQueryClient implements CwAveInterface {
     }, fee_, memo_, funds_);
   };
   checkInGuest = async ({
-    checkin,
-    stage
+    checkin
   }: {
     checkin: CheckInDetails;
-    stage: number;
   }, fee_: number | StdFee | "auto" = "auto", memo_?: string, funds_?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       check_in_guest: {
-        checkin,
-        stage
+        checkin
       }
     }, fee_, memo_, funds_);
   };

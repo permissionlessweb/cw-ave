@@ -4,8 +4,7 @@ use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 
 use crate::state::{
-    CheckInDetails, Config, EventSegments, GuestDetails, RegisteringGuest,
-    TicketPaymentOptionResponse,
+    CheckInDetails, Config, EventSegments, GuestDetails, RegisteringGuest, TicketPaymentOption,
 };
 
 #[cw_serde]
@@ -35,7 +34,6 @@ pub enum ExecuteMsg {
         guests: Vec<RegisteringGuest>,
     },
     CheckInGuest {
-        stage: u64,
         checkin: CheckInDetails,
     },
     RefundUnconfirmedTickets {
@@ -51,19 +49,28 @@ pub enum ReceiveMsg {
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-    /// Returns max possible deposit value for a shit-strap instance
+    /// returns basic details regarding this event
     #[returns(Config)]
     Config {},
-    /// Returns max possible deposit value for a shit-strap instance
+    /// All segements for this event
     #[returns(Vec<EventSegments>)]
     EventSegments {},
-    /// Returns max possible deposit value for a shit-strap instance
+    /// Details of a specific type of guest able to participate in event as.
+    #[returns(GuestDetails)]
+    GuestTypeDetailsByWeight { guest_weight: u64 },
+    /// All details of types of guest
+    #[returns(Vec<GuestDetails>)]
+    GuestTypeDetailsAll {},
+    /// returns whether or not a guest has checked in for a specific segment of this event
     #[returns(bool)]
     GuestAttendanceStatus { guest: String, event_stage_id: u64 },
     #[returns(Vec<bool>)]
-    GuestAttendanceStatusALL { guest: String },
-    #[returns(TicketPaymentOptionResponse)]
-    TicketPaymentOptionsByGuestType { guest_type: String },
-    #[returns(Vec<TicketPaymentOptionResponse>)]
+    /// Checkin status for a single guest, for all stages of this event
+    GuestAttendanceStatusAll { guest: String },
+    /// All payment options accepted for a given ticket type
+    #[returns(TicketPaymentOption)]
+    TicketPaymentOptionsByGuestWeight { guest_weight: u64 },
+    /// All payment options available
+    #[returns(Vec<TicketPaymentOption>)]
     AllTicketPaymentOptions {},
 }
