@@ -326,6 +326,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
+name = "av-event-helpers"
+version = "0.0.1"
+dependencies = [
+ "cosmwasm-std 2.2.2",
+]
+
+[[package]]
 name = "axum"
 version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1077,6 +1084,7 @@ dependencies = [
 name = "cw-ave"
 version = "0.0.1"
 dependencies = [
+ "av-event-helpers",
  "cosmos-sdk-proto 0.27.0",
  "cosmwasm-schema 2.2.2",
  "cosmwasm-std 2.2.2",
@@ -1099,6 +1107,7 @@ dependencies = [
 name = "cw-ave-factory"
 version = "0.1.0"
 dependencies = [
+ "av-event-helpers",
  "cosmwasm-schema 2.2.2",
  "cosmwasm-std 2.2.2",
  "cw-ave",

@@ -47,6 +47,7 @@ cw-denom  = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace  = true , default-features = false, features = ["derive"] }
 thiserror = { workspace = true }
+av-event-helpers = { workspace = true }
 
 [dev-dependencies]
 cw-multi-test = "2.4.0"

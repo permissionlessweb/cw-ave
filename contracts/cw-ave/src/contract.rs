@@ -1,19 +1,20 @@
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{
     generate_instantiate_salt2, preamble_msg_arb_036, sha256, CheckInDetails, CheckInSignatureData,
-    Config, EventSegments, GuestDetails, RegisteringGuest, TicketDetails, TicketPaymentOption,
-    ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS, RESERVED_TICKETS,
+    Config, EventSegments, GuestDetails, RegisteringEventAddressAndPayment, RegisteringGuest,
+    TicketDetails, TicketPaymentOption, ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS,
+    RESERVED_TICKETS, TOTAL_RESERVED_BY_GUEST,
 };
+use av_event_helpers::LICENSE_CANONICAL_ADDR;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    from_json, instantiate2_address, to_json_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Deps,
-    DepsMut, Env, MessageInfo, Order, Response, StdResult, Storage, Uint128, WasmMsg,
+    coin, from_json, instantiate2_address, to_json_binary, Addr, BankMsg, Binary, CanonicalAddr,
+    Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult, Storage, WasmMsg,
 };
 use cw2::set_contract_version;
-use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 
 // version info for migration info
@@ -21,6 +22,7 @@ const CONTRACT_NAME: &str = "crates.io:cw-shit-strap";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const NAMESPACE: &[u8] = b"aves";
+pub const CHARACTER_LIMIT: usize = 128;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -31,12 +33,12 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     // set owner
-    let owner = match msg.event_curator.is_some() {
-        true => deps
-            .api
-            .addr_validate(&msg.event_curator.clone().unwrap())?,
-        false => info.sender,
-    };
+    let curator = deps.api.addr_validate(&msg.event_curator.clone())?;
+
+    // generic validation
+    if msg.title.len() > CHARACTER_LIMIT || msg.description.len() > CHARACTER_LIMIT {
+        return Err(ContractError::BadEventTitleOrDescription {});
+    }
 
     // validate guest details
     for dt in msg.guest_details {
@@ -44,19 +46,35 @@ pub fn instantiate(
         match GUEST_DETAILS.may_load(deps.storage, dt.guest_weight)? {
             Some(_) => return Err(ContractError::DuplicateGuestWeight {}),
             None => {
+                if dt.guest_type.len() > CHARACTER_LIMIT
+                    || dt.max_ticket_limit > dt.total_ticket_limit
+                {
+                    return Err(ContractError::BadGuestDetailParams {});
+                }
+
+                // cannot set duplicate accepted tokens
+                let mut unique = Vec::new();
+                for fee in &dt.ticket_cost {
+                    if unique.contains(&fee.denom) {
+                        return Err(ContractError::DuplicateFeeDenom {});
+                    }
+                    unique.push(fee.denom.to_string());
+                }
+
                 GUEST_DETAILS.save(deps.storage, dt.guest_weight, &dt)?;
+                TOTAL_RESERVED_BY_GUEST.save(deps.storage, dt.guest_weight, &0)?;
             }
         }
     }
 
     // validate event stages
-    // ensure start & end dates are sequential
-    // ensure the previous end date is before or at the next start date
-
     for (i, event) in msg.event_timeline.iter().enumerate() {
         // Validate that start date is before or equal to end date
         if event.start > event.end {
             return Err(ContractError::InvalidEventDates {});
+        }
+        if event.stage_description.len() > 128usize {
+            return Err(ContractError::BadEventDescriptionLength {});
         }
 
         // For events that are not the first, check that the previous end date is before or at the next start date
@@ -100,7 +118,7 @@ pub fn instantiate(
     };
 
     let usher_msg = WasmMsg::Instantiate2 {
-        admin: Some(owner.to_string()),
+        admin: Some(env.contract.address.to_string()),
         code_id: msg.cw420,
         msg: to_json_binary(&cw420::msg::InstantiateMsg {
             admin: Some(env.contract.address.to_string()),
@@ -112,7 +130,7 @@ pub fn instantiate(
     };
 
     let guest_msg = WasmMsg::Instantiate2 {
-        admin: Some(owner.to_string()),
+        admin: Some(env.contract.address.to_string()),
         code_id: msg.cw420,
         msg: to_json_binary(&cw420::msg::InstantiateMsg {
             admin: Some(env.contract.address.to_string()),
@@ -124,16 +142,12 @@ pub fn instantiate(
     };
     let event_usher_contract = deps.api.addr_humanize(&usher_cw420)?;
     let event_guest_contract = deps.api.addr_humanize(&guest_cw420)?;
-    println!("{:#?}", event_usher_contract);
-    println!("{:#?}", event_guest_contract);
 
     CONFIG.save(
         deps.storage,
         &Config {
             title: msg.title,
-            curator: msg
-                .event_curator
-                .unwrap_or(env.contract.address.to_string()),
+            curator,
             event_usher_contract,
             event_guest_contract,
         },
@@ -142,25 +156,20 @@ pub fn instantiate(
     Ok(Response::new().add_messages(vec![usher_msg, guest_msg]))
 }
 
-// payment is made, address is recorded to state
-// admin must confirm payment, releasing funds
-// any non-confirmed payment can be returned
-// limit of guest-type only met for confirmed guests
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Receive(cw20_msg) => receive_cw20_message(deps, info, cw20_msg),
         ExecuteMsg::PurchaseTickets { guests } => perform_ticket_purchase(deps, info, guests),
         ExecuteMsg::RefundUnconfirmedTickets { guests } => {
             refund_unconfirmed_ticket_purchase(deps, info, guests)
         }
         ExecuteMsg::CheckInGuest { checkin } => perform_checkin_guest(deps, info, checkin),
+        ExecuteMsg::ClaimTicketPayments {} => perform_claim_ticket_payments(deps, env, info),
     }
 }
 
@@ -230,6 +239,40 @@ pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Respons
 }
 
 /// Entry point to particpate in shitstrap
+pub fn perform_claim_ticket_payments(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.curator {
+        return Err(ContractError::NotAnEventUsher {});
+    }
+
+    // retrive all tokens to query
+    let tokens: Vec<String> = GUEST_DETAILS
+        .range(deps.storage, None, None, Order::Ascending)
+        .filter_map(|res| res.ok())
+        .flat_map(|(_, guest_details)| guest_details.ticket_cost.into_iter().map(|c| c.denom))
+        .fold(vec![], |mut acc, denom| {
+            if !acc.contains(&denom) {
+                acc.push(denom);
+            }
+            acc
+        });
+
+    let balances: Vec<Coin> = tokens
+        .iter()
+        .map(|denom| deps.querier.query_balance(&env.contract.address, denom))
+        .collect::<StdResult<Vec<Coin>>>()?;
+
+    Ok(Response::new().add_message(BankMsg::Send {
+        to_address: config.curator.to_string(),
+        amount: balances,
+    }))
+}
+
+/// Entry point to checkin guests as event usher
 pub fn perform_checkin_guest(
     deps: DepsMut,
     info: MessageInfo,
@@ -312,93 +355,141 @@ pub fn perform_ticket_purchase(
     let cfg = CONFIG.load(deps.storage)?;
     let mut msgs = Vec::new();
 
+    // determine if funds sent cover each guest by weight and the token denom sent
+    // respond with the number of tickets
+
+    let dev_addr = deps
+        .api
+        .addr_humanize(&CanonicalAddr::from(LICENSE_CANONICAL_ADDR.as_bytes()))?;
+
     for guest in guests {
         // check if guest type exists
         let gd = GUEST_DETAILS.load(deps.storage, guest.guest_weight)?;
+        let count = TOTAL_RESERVED_BY_GUEST.load(deps.storage, gd.guest_weight)?;
 
-        let sent = count_tickets_and_remainder(&info.funds, gd.ticket_cost);
-        msgs.push(form_return_payment_overflow_msgs(&sent.1, &info.sender));
+        // Calculate how many tickets we can actually process (respecting the limit)
+        let max_possible = gd.total_ticket_limit.saturating_sub(count) as usize;
+        let process_count = guest.reap.len().min(max_possible);
 
-        // count how many tickets are being reserved from payment being made
-        let reserved = sent.0;
+        // Split the guest list - prioritize first entries in the array
+        let to_process = &guest.reap[..process_count];
+        // todo: implmeent overbooking feature where we can still accept these payments if neccessary
+        // let overflow = &guest.reap[process_count..];
+        // if !overflow.is_empty() {
+        // }
 
-        // save tickets reserved by the ticket wallet
-        RESERVED_TICKETS.update(deps.storage, &guest.ticket_wallet, |a| match a {
-            Some(mut td) => {
-                td.reserved += reserved;
-                if td.reserved > gd.max_ticket_limit.into() {
-                    return Err(ContractError::CannotReserveTicketCount {});
-                }
-                Ok::<TicketDetails, ContractError>(td)
-            }
-            None => {
-                if reserved < gd.max_ticket_limit.into() {
-                    Ok(TicketDetails { reserved })
-                } else {
-                    Err(ContractError::CannotReserveTicketCount {})
-                }
-            }
-        })?;
-
-        // add event guest to guest cw420 list
-        msgs.push(
-            form_update_guestlist_msg(
-                &guest.ticket_wallet,
-                gd.guest_weight,
-                &cfg.event_guest_contract,
-            )?
-            .into(),
+        // if len of guest.reap is greater than gd.limit, strip the # of entries in guest.reap from the object so that we will reach the limit and not error.
+        let (reserved, remaining_funds, dev_fee_msg) = count_tickets_and_remainder(
+            dev_addr.to_string(),
+            &info.funds,
+            gd.ticket_cost,
+            &to_process,
         );
 
-        // if res.weight.is
+        msgs.extend([
+            form_return_payment_overflow_msgs(&remaining_funds, &info.sender),
+            dev_fee_msg,
+        ]);
+
+        for ticket_wallet in guest.reap {
+            // save tickets reserved by the ticket wallet
+            RESERVED_TICKETS.update(deps.storage, &ticket_wallet.ticket_addr, |a| match a {
+                Some(mut td) => {
+                    td.reserved += 1;
+                    if td.reserved > gd.max_ticket_limit.into() {
+                        return Err(ContractError::CannotReserveTicketCount {});
+                    }
+                    Ok::<TicketDetails, ContractError>(td)
+                }
+                None => {
+                    if reserved <= gd.max_ticket_limit.into() {
+                        Ok(TicketDetails { reserved })
+                    } else {
+                        Err(ContractError::CannotReserveTicketCount {})
+                    }
+                }
+            })?;
+            // add event guest to guest cw420 list
+            msgs.push(
+                form_update_guestlist_msg(
+                    &ticket_wallet.ticket_addr,
+                    gd.guest_weight,
+                    &cfg.event_guest_contract,
+                )?
+                .into(),
+            );
+        }
     }
     Ok(Response::new())
 }
 
 fn refund_unconfirmed_ticket_purchase(
-    deps: DepsMut,
-    info: MessageInfo,
-    guest: Vec<String>,
+    _deps: DepsMut,
+    _info: MessageInfo,
+    _guest: Vec<String>,
 ) -> Result<Response, ContractError> {
     Ok(Response::new())
 }
 
-fn receive_cw20_message(
-    deps: DepsMut,
-    info: MessageInfo,
-    msg: Cw20ReceiveMsg,
-) -> Result<Response, ContractError> {
-    match from_json(&msg.msg)? {
-        // only cw20 can call cw20 entry point.
-        // we set the denom for the cw20 as info.sender,
-        // which will result in error if any addr other than accepted cw20 makes call.
-        ReceiveMsg::PurchaseTickets { guests } => {
-            perform_ticket_purchase(deps, info.clone(), guests)
-        }
-    }
-}
+// fn receive_cw20_message(
+//     deps: DepsMut,
+//     info: MessageInfo,
+//     msg: Cw20ReceiveMsg,
+// ) -> Result<Response, ContractError> {
+//     match from_json(&msg.msg)? {
+//         // only cw20 can call cw20 entry point.
+//         // we set the denom for the cw20 as info.sender,
+//         // which will result in error if any addr other than accepted cw20 makes call.
+//         ReceiveMsg::PurchaseTickets { guests } => {
+//             perform_ticket_purchase(deps, info.clone(), guests)
+//         }
+//     }
+// }
 
 /// counts how many tickets are purchased, returning any overflow amounts sent.
 fn count_tickets_and_remainder(
-    info_funds: &Vec<Coin>,
+    dev_addr: String,
+    funds_sent: &[Coin],
     gd_ticket_cost: Vec<Coin>,
-) -> (u128, Vec<Coin>) {
+    reap: &[RegisteringEventAddressAndPayment],
+) -> (u128, Vec<Coin>, CosmosMsg) {
+    let mut remaining_funds = funds_sent.to_vec();
     let mut total_tickets = 0;
-    let mut remaining_funds = info_funds.clone();
-    for cost in gd_ticket_cost {
-        if let Some(fund) = remaining_funds.iter_mut().find(|f| f.denom == cost.denom) {
-            let tickets = fund.amount / cost.amount;
-            total_tickets += tickets.u128();
-            fund.amount -= tickets * cost.amount;
-        } else {
-            return (0, remaining_funds);
+
+    let mut dev_fee_coins = Vec::new();
+
+    for guest in reap {
+        let denom = guest.payment_asset.clone();
+
+        // Find required payment amount for this denom
+        if let Some(cost) = gd_ticket_cost.iter().find(|c| c.denom == denom) {
+            // Find matching coin in remaining funds
+            if let Some(fund) = remaining_funds.iter_mut().find(|c| c.denom == denom) {
+                // Check if sufficient funds are available
+                if fund.amount >= cost.amount {
+                    // 3% flat fee
+                    dev_fee_coins.push(coin(
+                        cost.amount.multiply_ratio(3u128, 100u128).u128(),
+                        fund.denom.to_string(),
+                    ));
+                    // Deduct payment and count ticket
+                    fund.amount = fund.amount.checked_sub(cost.amount).unwrap();
+                    total_tickets += 1;
+                }
+            }
         }
     }
 
-    // Filter out coins with zero amount
-    remaining_funds.retain(|coin| coin.amount > Uint128::zero());
-
-    (total_tickets, remaining_funds)
+    // Filter out zero-amount coins
+    remaining_funds.retain(|coin| !coin.amount.is_zero());
+    (
+        total_tickets,
+        remaining_funds,
+        CosmosMsg::Bank(BankMsg::Send {
+            to_address: dev_addr,
+            amount: dev_fee_coins,
+        }),
+    )
 }
 
 fn form_update_guestlist_msg(

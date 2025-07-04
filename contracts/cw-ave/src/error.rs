@@ -5,7 +5,7 @@ use thiserror::Error;
 pub enum ContractError {
     #[error("{0}")]
     StdError(#[from] StdError),
-    
+
     #[error("{0}")]
     VerificationError(#[from] VerificationError),
 
@@ -29,6 +29,24 @@ pub enum ContractError {
 
     #[error("you cannot register, this wallet is not an usher for this event.")]
     NotAnEventUsher {},
+
+    #[error("DuplicateFeeDenom.")]
+    DuplicateFeeDenom {},
+
+    #[error("yBadEventDescriptionLengtht.")]
+    BadEventDescriptionLength {},
+
+    #[error("the token set as being used for ticket payment was not found in sent tokens..")]
+    GuestTicketPaymentSetIncorrect {},
+
+    #[error("you did not send the required amount of funds for the ticket payment.")]
+    NotEnoughtFundsSetForTicketPayment {},
+
+    #[error("BadEventTitle.")]
+    BadEventTitleOrDescription {},
+
+    #[error("BadGuestDetailParams.")]
+    BadGuestDetailParams {},
 
     #[error("guest has already checked in.")]
     GuestAlreadyCheckedIn {},

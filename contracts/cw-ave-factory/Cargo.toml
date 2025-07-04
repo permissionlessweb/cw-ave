@@ -26,6 +26,7 @@ cw420 = { workspace = true }
 cw20 = { workspace = true }
 thiserror = { workspace = true }
 cw-utils = { workspace = true }
+av-event-helpers = { workspace = true }
 
 [dev-dependencies]
 cw-multi-test = {version = "2.4.0", features = ["cosmwasm_1_2"]}

@@ -17,6 +17,9 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("LicenseFeeRequired")]
+    LicenseFeeRequired {},
+
     #[error("{0}")]
     ParseReplyError(#[from] ParseReplyError),
 

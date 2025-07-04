@@ -4,25 +4,38 @@ use cw_storage_plus::{Item, Map};
 use sha2::{Digest, Sha256};
 
 pub const CONFIG: Item<Config> = Item::new("c");
+/// Details about a specific guest type of an event (1 day, 2 day, vip, etc)
 pub const GUEST_DETAILS: Map<u64, GuestDetails> = Map::new("gd");
+/// A count of all tickets purchasedby a specific guest address.
 pub const RESERVED_TICKETS: Map<&String, TicketDetails> = Map::new("rt");
+
+pub const TOTAL_RESERVED_BY_GUEST: Map<u64, u32> = Map::new("trbg");
+
 pub const EVENT_STAGES: Map<u64, EventSegments> = Map::new("es");
 
 pub const ATTENDANCE_RECORD: Map<(&String, u64), bool> = Map::new("rt");
 #[cw_serde]
 pub struct Config {
-    pub curator: String,
+    pub curator: Addr,
     pub event_usher_contract: Addr,
     pub event_guest_contract: Addr,
     pub title: String,
 }
 
 #[cw_serde]
+pub struct RegisteringEventAddressAndPayment {
+    /// the ephemeral wallet being used for this specific event
+    pub ticket_addr: String,
+    /// the microdenomination of the token being payed for this registering guest
+    pub payment_asset: String,
+}
+
+#[cw_serde]
 pub struct RegisteringGuest {
     /// label specific to type of guest a user is purchasing a ticket for
     pub guest_weight: u64,
-    /// the ephemeral wallet being used for this specific event
-    pub ticket_wallet: String,
+    // the list of wallet address that will checkin, and the payment token used to purchase ticket
+    pub reap: Vec<RegisteringEventAddressAndPayment>,
 }
 
 #[cw_serde]
@@ -71,6 +84,8 @@ pub struct GuestDetails {
     pub guest_weight: u64,
     /// limit to number of tickets a guest can purchase
     pub max_ticket_limit: u32,
+    /// the total amount of tickets available for this guest type
+    pub total_ticket_limit: u32,
     /// limit to number of this type of guests
     // pub max_guest_limit: u32,
     // pub overbooking_limit: u32,

@@ -1,10 +1,9 @@
-use cosmwasm_std::{coins, from_json, Addr, Binary, Coin, Empty, Timestamp, Uint128};
-use cw20::Cw20Coin;
+use cosmwasm_std::testing::mock_dependencies;
+use cosmwasm_std::{coins, Addr, Api, Coin, Empty, Timestamp, Uint128};
 use cw4::Member;
 use cw_ave::msg::InstantiateMsg as AvEventInstantiateMsg;
 use cw_ave::state::{EventSegmentAccessType, EventSegments, GuestDetails};
 use cw_ave::ContractError as CwAveContractError;
-use cw_denom::UncheckedDenom;
 use cw_multi_test::{App, BankSudo, Contract, ContractWrapper, Executor, SudoMsg};
 use cw_ownable::OwnershipError;
 
@@ -29,15 +28,6 @@ fn factory_contract() -> Box<dyn Contract<Empty>> {
         crate::contract::query,
     )
     .with_reply(crate::contract::reply);
-    Box::new(contract)
-}
-
-fn cw20_contract() -> Box<dyn Contract<Empty>> {
-    let contract = ContractWrapper::new(
-        cw20_base::contract::execute,
-        cw20_base::contract::instantiate,
-        cw20_base::contract::query,
-    );
     Box::new(contract)
 }
 
@@ -84,7 +74,7 @@ fn create_valid_ave_instantiate_msg(cw420_code_id: u64) -> AvEventInstantiateMsg
     AvEventInstantiateMsg {
         title: "Test Event".to_string(),
         description: "A test event".to_string(),
-        event_curator: Some(ALICE.to_string()),
+        event_curator: ALICE.to_string(),
         usher_admins: vec![Member {
             addr: ALICE.to_string(),
             weight: 1,
@@ -99,6 +89,7 @@ fn create_valid_ave_instantiate_msg(cw420_code_id: u64) -> AvEventInstantiateMsg
                     amount: Uint128::new(1000),
                 }],
                 event_segment_access: EventSegmentAccessType::SingleSegment {},
+                total_ticket_limit: 10,
             },
             GuestDetails {
                 guest_type: "General".to_string(),
@@ -108,6 +99,7 @@ fn create_valid_ave_instantiate_msg(cw420_code_id: u64) -> AvEventInstantiateMsg
                     denom: NATIVE_DENOM.to_string(),
                     amount: Uint128::new(500),
                 }],
+                total_ticket_limit: 10,
                 event_segment_access: EventSegmentAccessType::SingleSegment {},
             },
         ],
@@ -125,6 +117,29 @@ fn create_valid_ave_instantiate_msg(cw420_code_id: u64) -> AvEventInstantiateMsg
             },
         ],
     }
+}
+
+#[test]
+fn canonical_addr() {
+    const ENTROPY: &str = "eretsketer";
+    let btsg = mock_dependencies().api.with_prefix("btsg");
+    let cosmos = mock_dependencies().api.with_prefix("cosmos");
+
+    let btsg_hra = btsg.addr_make(ENTROPY);
+    let cosmos_hra = cosmos.addr_make(ENTROPY);
+    println!("{:#?}", btsg_hra.to_string());
+    println!("{:#?}", cosmos_hra.to_string());
+    
+    let btsg_can = btsg.addr_canonicalize(btsg_hra.as_str()).unwrap();
+    let cosmos_can = cosmos.addr_canonicalize(cosmos_hra.as_str()).unwrap();
+    
+    // cosmos addr we are using to collectlicense fee
+    let license_addr = "cosmos1tzz4sp3y8l5lf76qy0ydzjwlntcu8zg7agj6am";
+    let license_can = cosmos.addr_canonicalize(license_addr).unwrap();
+    println!("{:#?}", license_can.to_string());
+    
+
+    assert_eq!(btsg_can, cosmos_can)
 }
 
 #[test]
@@ -427,7 +442,7 @@ fn test_list_contracts_pagination() {
         let ave_instantiate_msg = AvEventInstantiateMsg {
             title: format!("Test Event {}", i),
             description: format!("A test event {}", i),
-            event_curator: Some(ALICE.to_string()),
+            event_curator: ALICE.to_string(),
             usher_admins: vec![Member {
                 addr: ALICE.to_string(),
                 weight: 1,
@@ -440,6 +455,7 @@ fn test_list_contracts_pagination() {
                     denom: NATIVE_DENOM.to_string(),
                     amount: Uint128::new(500),
                 }],
+                total_ticket_limit: 10,
                 event_segment_access: EventSegmentAccessType::SingleSegment {},
             }],
             cw420: cw420_code_id,
@@ -617,7 +633,7 @@ fn test_query_by_instantiator_reverse() {
         let ave_instantiate_msg = AvEventInstantiateMsg {
             title: format!("Alice Event {}", i),
             description: format!("Alice's event {}", i),
-            event_curator: Some(ALICE.to_string()),
+            event_curator: ALICE.to_string(),
             usher_admins: vec![Member {
                 addr: ALICE.to_string(),
                 weight: 1,
@@ -630,6 +646,7 @@ fn test_query_by_instantiator_reverse() {
                     denom: NATIVE_DENOM.to_string(),
                     amount: Uint128::new(500),
                 }],
+                total_ticket_limit: 10,
                 event_segment_access: EventSegmentAccessType::SingleSegment {},
             }],
             cw420: cw420_code_id,
@@ -809,7 +826,7 @@ fn test_invalid_guest_details() {
     let ave_instantiate_msg = AvEventInstantiateMsg {
         title: "Test Event".to_string(),
         description: "A test event".to_string(),
-        event_curator: Some(ALICE.to_string()),
+        event_curator: ALICE.to_string(),
         usher_admins: vec![Member {
             addr: ALICE.to_string(),
             weight: 1,
@@ -818,6 +835,7 @@ fn test_invalid_guest_details() {
             guest_type: "General".to_string(),
             guest_weight: 50,
             max_ticket_limit: 10,
+            total_ticket_limit: 10,
             ticket_cost: vec![Coin {
                 denom: NATIVE_DENOM.to_string(),
                 amount: Uint128::new(500),

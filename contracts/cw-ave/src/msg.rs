@@ -9,7 +9,7 @@ use crate::state::{
 #[cw_serde]
 pub struct InstantiateMsg {
     /// if not set, sender
-    pub event_curator: Option<String>,
+    pub event_curator: String,
     /// Dao one must be a member of to make use of shitstraps
     /// label for contract & front end
     pub title: String,
@@ -26,19 +26,14 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
-#[derive(cw_orch::ExecuteFns)]  
+#[derive(cw_orch::ExecuteFns)]
 pub enum ExecuteMsg {
-    /// Cw20 Entry Point
-    Receive(Cw20ReceiveMsg),
-    PurchaseTickets {
-        guests: Vec<RegisteringGuest>,
-    },
-    CheckInGuest {
-        checkin: CheckInDetails,
-    },
-    RefundUnconfirmedTickets {
-        guests: Vec<String>,
-    },
+    // /// Cw20 Entry Point
+    // Receive(Cw20ReceiveMsg),
+    PurchaseTickets { guests: Vec<RegisteringGuest> },
+    CheckInGuest { checkin: CheckInDetails },
+    RefundUnconfirmedTickets { guests: Vec<String> },
+    ClaimTicketPayments {},
 }
 
 #[cw_serde]

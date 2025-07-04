@@ -1,8 +1,9 @@
+use av_event_helpers::LICENSE_CANONICAL_ADDR;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, Binary, CanonicalAddr, Deps, DepsMut, Env, MessageInfo, Order, Reply, Response,
-    StdResult, SubMsg, WasmMsg,
+    coin, to_json_binary, BankMsg, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Order, Reply, Response, StdResult, SubMsg, WasmMsg,
 };
 use cosmwasm_std::{Addr, Coin};
 
@@ -23,16 +24,31 @@ pub const MAX_LIMIT: u32 = 50;
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     cw_ownable::initialize_owner(deps.storage, deps.api, msg.owner.as_deref())?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     SHITSTRAP_CODE_ID.save(deps.storage, &msg.cw_ave_id)?;
-    Ok(Response::new()
-        .add_attribute("method", "instantiate")
-        .add_attribute("creator", info.sender))
+
+    // HARDCODED LISENSE FEE
+    let license_fee = av_event_helpers::get_license_fee(&env.block.chain_id)?;
+    if info.funds.iter().any(|e| e == &license_fee) {
+        let base_fee = CosmosMsg::Bank(BankMsg::Send {
+            to_address: deps
+                .api
+                .addr_humanize(&CanonicalAddr::from(LICENSE_CANONICAL_ADDR.as_bytes()))?
+                .to_string(),
+            amount: vec![license_fee],
+        });
+        Ok(Response::new()
+            .add_attribute("method", "instantiate")
+            .add_attribute("creator", info.sender)
+            .add_message(base_fee))
+    } else {
+        return Err(ContractError::LicenseFeeRequired {});
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -91,7 +107,7 @@ pub fn instantiate_contract(
 
     // Instantiate the specified contract with owner as the admin.
     let instantiate = WasmMsg::Instantiate {
-        admin: instantiate_msg.event_curator.clone(),
+        admin: Some(instantiate_msg.event_curator.clone()),
         code_id,
         msg: to_json_binary(&instantiate_msg)?,
         funds: funds.unwrap_or_default(),
