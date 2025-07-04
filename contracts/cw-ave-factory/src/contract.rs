@@ -14,7 +14,7 @@ use cw_ave::{
 use cw_storage_plus::Bound;
 
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{avevent_contracts, AvEventContract, SHITSTRAP_CODE_ID, TMP_INSTANTIATOR_INFO};
 
 pub(crate) const CONTRACT_NAME: &str = "crates.io:cw-ave-factory";
@@ -282,4 +282,9 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
         }
         _ => Err(ContractError::UnknownReplyId { id: msg.id }),
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    Ok(Response::new())
 }

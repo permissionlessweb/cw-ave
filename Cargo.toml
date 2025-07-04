@@ -4,6 +4,7 @@ exclude = [ ]
 members =  [
   "contracts/*",
   "packages/*",
+  "scripts",
 ]
 resolver = "2"
 

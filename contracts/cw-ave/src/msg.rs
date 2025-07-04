@@ -27,6 +27,7 @@ pub struct InstantiateMsg {
 }
 
 #[cw_serde]
+#[derive(cw_orch::ExecuteFns)]  
 pub enum ExecuteMsg {
     /// Cw20 Entry Point
     Receive(Cw20ReceiveMsg),
@@ -47,7 +48,7 @@ pub enum ReceiveMsg {
 }
 
 #[cw_serde]
-#[derive(QueryResponses)]
+#[derive(cw_orch::QueryFns, QueryResponses)]
 pub enum QueryMsg {
     /// returns basic details regarding this event
     #[returns(Config)]
@@ -74,3 +75,6 @@ pub enum QueryMsg {
     #[returns(Vec<TicketPaymentOption>)]
     AllTicketPaymentOptions {},
 }
+
+#[cw_serde]
+pub struct MigrateMsg {}

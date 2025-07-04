@@ -1,5 +1,5 @@
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
 use crate::state::{
     generate_instantiate_salt2, preamble_msg_arb_036, sha256, CheckInDetails, CheckInSignatureData,
     Config, EventSegments, GuestDetails, RegisteringGuest, TicketDetails, TicketPaymentOption,
@@ -217,6 +217,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .collect::<StdResult<Vec<GuestDetails>>>()?,
         )?),
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    Ok(Response::new())
 }
 
 /// Entry point to particpate in shitstrap

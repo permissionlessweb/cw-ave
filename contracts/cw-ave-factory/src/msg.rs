@@ -11,6 +11,7 @@ pub struct InstantiateMsg {
 
 #[cw_ownable_execute]
 #[cw_serde]
+#[derive(cw_orch::ExecuteFns)] // Functio
 pub enum ExecuteMsg {
     /// Instantiates a new vesting contract that is funded by a native token.
     CreateNativeAvEventContract {
@@ -24,7 +25,7 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
-#[derive(QueryResponses)]
+#[derive(cw_orch::QueryFns, QueryResponses)]
 pub enum QueryMsg {
     /// Returns list of all vesting payment contracts
     #[returns(Vec<crate::state::AvEventContract>)]
@@ -74,3 +75,6 @@ pub enum QueryMsg {
     #[returns(::std::primitive::u64)]
     CodeId {},
 }
+
+#[cw_serde]
+pub struct MigrateMsg {}
