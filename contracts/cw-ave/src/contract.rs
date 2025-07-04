@@ -89,6 +89,7 @@ pub fn instantiate(
         Ok(addr) => addr,
         Err(err) => return Err(ContractError::from(err)),
     };
+
     let guest_cw420 = match instantiate2_address(
         cw721_checksum.checksum.as_slice(),
         &contract_address,
@@ -121,6 +122,10 @@ pub fn instantiate(
         label: "cw-ave-guests".to_string(),
         salt: guest_salt,
     };
+    let event_usher_contract = deps.api.addr_humanize(&usher_cw420)?;
+    let event_guest_contract = deps.api.addr_humanize(&guest_cw420)?;
+    println!("{:#?}", event_usher_contract);
+    println!("{:#?}", event_guest_contract);
 
     CONFIG.save(
         deps.storage,
@@ -129,8 +134,8 @@ pub fn instantiate(
             curator: msg
                 .event_curator
                 .unwrap_or(env.contract.address.to_string()),
-            event_usher_contract: deps.api.addr_humanize(&usher_cw420)?,
-            event_guest_contract: deps.api.addr_humanize(&guest_cw420)?,
+            event_usher_contract,
+            event_guest_contract,
         },
     )?;
 
@@ -426,7 +431,7 @@ fn check_if_cw420_member(
     cw420: &Addr,
     wallet: &Addr,
 ) -> Result<Option<u64>, ContractError> {
-    /// check if guest already is member
+    // check if guest already is member
     let res: cw4::MemberResponse = deps.querier.query_wasm_smart(
         cw420,
         &cw420::msg::QueryMsg::Member {

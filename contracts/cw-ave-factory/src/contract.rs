@@ -253,7 +253,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         INSTANTIATE_CONTRACT_REPLY_ID => {
-            let contract_addr = deps.api.addr_humanize(&CanonicalAddr::from(msg.payload))?;
+            let contract_addr = deps.api.addr_validate(
+                &msg.result
+                    .into_result()
+                    .map_err(|e| ContractError::Std(cosmwasm_std::StdError::generic_err(e)))?
+                    .events[0]
+                    .attributes[0]
+                    .value,
+            )?;
 
             // // Query new shistrap payment contract for info
             // let shit_strap: AvEventConfig = deps

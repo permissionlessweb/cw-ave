@@ -13,7 +13,7 @@ crate-type = ["cdylib", "rlib"]
 library = []
 
 [dependencies]
-cosmwasm-std = { workspace = true }
+cosmwasm-std = { workspace = true, features = ["cosmwasm_1_2"] }
 cosmwasm-schema = { workspace = true }
 cw-ave = { path = "../cw-ave", features = ["library"] }
 cw-denom = { workspace = true }
@@ -21,10 +21,13 @@ cw-ownable = { workspace = true }
 cw-orch = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw2 = { workspace = true }
+cw4 = { workspace = true }
+cw420 = { workspace = true }
 cw20 = { workspace = true }
 thiserror = { workspace = true }
 cw-utils = { workspace = true }
 
 [dev-dependencies]
-cw-multi-test = "2.4.0"
-cw20-base = { workspace = true, features = ["library"] }
+cw-multi-test = {version = "2.4.0", features = ["cosmwasm_1_2"]}
+cw20-base = { workspace = true, features = ["library"] } 
+easy-addr = { workspace = true }

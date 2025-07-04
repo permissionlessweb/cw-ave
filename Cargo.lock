@@ -1111,6 +1111,9 @@ dependencies = [
  "cw2 2.0.0",
  "cw20 2.0.0",
  "cw20-base",
+ "cw4",
+ "cw420",
+ "easy-addr",
  "thiserror 2.0.12",
 ]
 

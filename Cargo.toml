@@ -34,7 +34,7 @@ overflow-checks = true
 
 [workspace.dependencies]
 cosmwasm-schema = "2.2.2"
-cosmwasm-std = { version = "2.2.2" }
+cosmwasm-std = { version = "2.2.2", features = ["cosmwasm_1_2"] }
 sha2 = { version = "0.10.2", default-features = false }
 cw-storage-plus = "2.0.0"
 cosmos-sdk-proto = "0.27.0"
