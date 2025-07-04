@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Binary, Checksum, Coin, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Binary, Checksum, Coin, Timestamp};
 use cw_storage_plus::{Item, Map};
 use sha2::{Digest, Sha256};
 

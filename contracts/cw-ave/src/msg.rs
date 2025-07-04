@@ -1,5 +1,4 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Coin;
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 

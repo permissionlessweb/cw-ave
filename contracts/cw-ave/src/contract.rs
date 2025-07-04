@@ -69,7 +69,7 @@ pub fn instantiate(
 
         // Save the event stage
         let event_stage_id = i + 1;
-        EVENT_STAGES.save(deps.storage, event_stage_id as u64, &event)?;
+        EVENT_STAGES.save(deps.storage, event_stage_id as u64, event)?;
     }
 
     // setup cw420 groups
@@ -166,7 +166,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::EventSegments {} => to_json_binary(
             &EVENT_STAGES
                 .range(deps.storage, None, None, cosmwasm_std::Order::Descending)
-                .map(|item| item.map(|(_, v)| v.into()))
+                .map(|item| item.map(|(_, v)| v))
                 .collect::<StdResult<Vec<EventSegments>>>()?
                 .into_iter()
                 .enumerate()
@@ -290,11 +290,11 @@ pub fn update_attendance_record(
     ATTENDANCE_RECORD.update(storage, (ticket_addr, event_segment_id), |ci| {
         if let Some(status) = ci {
             match status {
-                true => return Err(ContractError::GuestAlreadyCheckedIn {}),
-                false => return Ok(true),
+                true => Err(ContractError::GuestAlreadyCheckedIn {}),
+                false => Ok(true),
             }
         } else {
-            return Err(ContractError::GuestTypeIncorrect {});
+            Err(ContractError::GuestTypeIncorrect {})
         }
     })
 }
@@ -324,13 +324,13 @@ pub fn perform_ticket_purchase(
                 if td.reserved > gd.max_ticket_limit.into() {
                     return Err(ContractError::CannotReserveTicketCount {});
                 }
-                return Ok::<TicketDetails, ContractError>(td);
+                Ok::<TicketDetails, ContractError>(td)
             }
             None => {
                 if reserved < gd.max_ticket_limit.into() {
-                    return Ok(TicketDetails { reserved });
+                    Ok(TicketDetails { reserved })
                 } else {
-                    return Err(ContractError::CannotReserveTicketCount {});
+                    Err(ContractError::CannotReserveTicketCount {})
                 }
             }
         })?;

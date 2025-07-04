@@ -1,5 +1,4 @@
-use cosmwasm_std::{DecimalRangeExceeded, Instantiate2AddressError, StdError, VerificationError};
-use cw_denom::DenomError;
+use cosmwasm_std::{Instantiate2AddressError, StdError, VerificationError};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]

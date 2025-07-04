@@ -7,10 +7,7 @@ use cosmwasm_std::{
 use cosmwasm_std::{Addr, Coin};
 
 use cw2::set_contract_version;
-use cw_ave::{
-    msg::{InstantiateMsg as AvEventInstantiateMsg, QueryMsg as ShitstrapQueryMsg},
-    state::Config as AvEventConfig,
-};
+use cw_ave::msg::InstantiateMsg as AvEventInstantiateMsg;
 use cw_storage_plus::Bound;
 
 use crate::error::ContractError;
