@@ -280,7 +280,8 @@
           "guest_type",
           "guest_weight",
           "max_ticket_limit",
-          "ticket_cost"
+          "ticket_cost",
+          "total_ticket_limit"
         ],
         "properties": {
           "event_segment_access": {
@@ -308,6 +309,12 @@
             "items": {
               "$ref": "#/definitions/Coin"
             }
+          },
+          "total_ticket_limit": {
+            "description": "the total amount of tickets available for this guest type",
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
           }
         },
         "additionalProperties": false
@@ -317,6 +324,7 @@
         "required": [
           "cw420",
           "description",
+          "event_curator",
           "event_timeline",
           "guest_details",
           "title",
@@ -335,10 +343,7 @@
           },
           "event_curator": {
             "description": "if not set, sender",
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "string"
           },
           "event_timeline": {
             "description": "timeline of events segments",

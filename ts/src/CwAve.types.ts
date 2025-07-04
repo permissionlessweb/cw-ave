@@ -17,7 +17,7 @@ export type Uint128 = string;
 export interface InstantiateMsg {
   cw420: number;
   description: string;
-  event_curator?: string | null;
+  event_curator: string;
   event_timeline: EventSegments[];
   guest_details: GuestDetails[];
   title: string;
@@ -34,6 +34,7 @@ export interface GuestDetails {
   guest_weight: number;
   max_ticket_limit: number;
   ticket_cost: Coin[];
+  total_ticket_limit: number;
 }
 export interface Coin {
   amount: Uint128;
@@ -44,8 +45,6 @@ export interface Member {
   weight: number;
 }
 export type ExecuteMsg = {
-  receive: Cw20ReceiveMsg;
-} | {
   purchase_tickets: {
     guests: RegisteringGuest[];
   };
@@ -57,16 +56,17 @@ export type ExecuteMsg = {
   refund_unconfirmed_tickets: {
     guests: string[];
   };
+} | {
+  claim_ticket_payments: {};
 };
 export type Binary = string;
-export interface Cw20ReceiveMsg {
-  amount: Uint128;
-  msg: Binary;
-  sender: string;
-}
 export interface RegisteringGuest {
   guest_weight: number;
-  ticket_wallet: string;
+  reap: RegisteringEventAddressAndPayment[];
+}
+export interface RegisteringEventAddressAndPayment {
+  payment_asset: string;
+  ticket_addr: string;
 }
 export interface CheckInDetails {
   pubkey: Binary;
@@ -107,7 +107,7 @@ export interface TicketPaymentOption {
 }
 export type Addr = string;
 export interface Config {
-  curator: string;
+  curator: Addr;
   event_guest_contract: Addr;
   event_usher_contract: Addr;
   title: string;

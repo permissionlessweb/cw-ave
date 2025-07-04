@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, Cw20ReceiveMsg, RegisteringGuest, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 export interface CwAveReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<Config>;
@@ -124,15 +124,6 @@ export class CwAveQueryClient implements CwAveReadOnlyInterface {
 export interface CwAveInterface extends CwAveReadOnlyInterface {
   contractAddress: string;
   sender: string;
-  receive: ({
-    amount,
-    msg,
-    sender
-  }: {
-    amount: Uint128;
-    msg: Binary;
-    sender: string;
-  }, fee_?: number | StdFee | "auto", memo_?: string, funds_?: Coin[]) => Promise<ExecuteResult>;
   purchaseTickets: ({
     guests
   }: {
@@ -148,6 +139,7 @@ export interface CwAveInterface extends CwAveReadOnlyInterface {
   }: {
     guests: string[];
   }, fee_?: number | StdFee | "auto", memo_?: string, funds_?: Coin[]) => Promise<ExecuteResult>;
+  claimTicketPayments: (fee_?: number | StdFee | "auto", memo_?: string, funds_?: Coin[]) => Promise<ExecuteResult>;
 }
 export class CwAveClient extends CwAveQueryClient implements CwAveInterface {
   client: SigningCosmWasmClient;
@@ -159,29 +151,12 @@ export class CwAveClient extends CwAveQueryClient implements CwAveInterface {
     this.client = client;
     this.sender = sender;
     this.contractAddress = contractAddress;
-    this.receive = this.receive.bind(this);
     this.purchaseTickets = this.purchaseTickets.bind(this);
     this.checkInGuest = this.checkInGuest.bind(this);
     this.refundUnconfirmedTickets = this.refundUnconfirmedTickets.bind(this);
+    this.claimTicketPayments = this.claimTicketPayments.bind(this);
   }
 
-  receive = async ({
-    amount,
-    msg,
-    sender
-  }: {
-    amount: Uint128;
-    msg: Binary;
-    sender: string;
-  }, fee_: number | StdFee | "auto" = "auto", memo_?: string, funds_?: Coin[]): Promise<ExecuteResult> => {
-    return await this.client.execute(this.sender, this.contractAddress, {
-      receive: {
-        amount,
-        msg,
-        sender
-      }
-    }, fee_, memo_, funds_);
-  };
   purchaseTickets = async ({
     guests
   }: {
@@ -213,6 +188,11 @@ export class CwAveClient extends CwAveQueryClient implements CwAveInterface {
       refund_unconfirmed_tickets: {
         guests
       }
+    }, fee_, memo_, funds_);
+  };
+  claimTicketPayments = async (fee_: number | StdFee | "auto" = "auto", memo_?: string, funds_?: Coin[]): Promise<ExecuteResult> => {
+    return await this.client.execute(this.sender, this.contractAddress, {
+      claim_ticket_payments: {}
     }, fee_, memo_, funds_);
   };
 }

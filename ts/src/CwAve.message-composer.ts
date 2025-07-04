@@ -7,19 +7,10 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, Cw20ReceiveMsg, RegisteringGuest, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 export interface CwAveMsg {
   contractAddress: string;
   sender: string;
-  receive: ({
-    amount,
-    msg,
-    sender
-  }: {
-    amount: Uint128;
-    msg: Binary;
-    sender: string;
-  }, funds_?: Coin[]) => MsgExecuteContractEncodeObject;
   purchaseTickets: ({
     guests
   }: {
@@ -35,6 +26,7 @@ export interface CwAveMsg {
   }: {
     guests: string[];
   }, funds_?: Coin[]) => MsgExecuteContractEncodeObject;
+  claimTicketPayments: (funds_?: Coin[]) => MsgExecuteContractEncodeObject;
 }
 export class CwAveMsgComposer implements CwAveMsg {
   sender: string;
@@ -43,37 +35,12 @@ export class CwAveMsgComposer implements CwAveMsg {
   constructor(sender: string, contractAddress: string) {
     this.sender = sender;
     this.contractAddress = contractAddress;
-    this.receive = this.receive.bind(this);
     this.purchaseTickets = this.purchaseTickets.bind(this);
     this.checkInGuest = this.checkInGuest.bind(this);
     this.refundUnconfirmedTickets = this.refundUnconfirmedTickets.bind(this);
+    this.claimTicketPayments = this.claimTicketPayments.bind(this);
   }
 
-  receive = ({
-    amount,
-    msg,
-    sender
-  }: {
-    amount: Uint128;
-    msg: Binary;
-    sender: string;
-  }, funds_?: Coin[]): MsgExecuteContractEncodeObject => {
-    return {
-      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-      value: MsgExecuteContract.fromPartial({
-        sender: this.sender,
-        contract: this.contractAddress,
-        msg: toUtf8(JSON.stringify({
-          receive: {
-            amount,
-            msg,
-            sender
-          }
-        })),
-        funds: funds_
-      })
-    };
-  };
   purchaseTickets = ({
     guests
   }: {
@@ -126,6 +93,19 @@ export class CwAveMsgComposer implements CwAveMsg {
           refund_unconfirmed_tickets: {
             guests
           }
+        })),
+        funds: funds_
+      })
+    };
+  };
+  claimTicketPayments = (funds_?: Coin[]): MsgExecuteContractEncodeObject => {
+    return {
+      typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+      value: MsgExecuteContract.fromPartial({
+        sender: this.sender,
+        contract: this.contractAddress,
+        msg: toUtf8(JSON.stringify({
+          claim_ticket_payments: {}
         })),
         funds: funds_
       })

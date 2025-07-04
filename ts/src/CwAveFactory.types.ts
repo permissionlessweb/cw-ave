@@ -7,7 +7,7 @@
 export interface InstantiateMsg {
   cw420: number;
   description: string;
-  event_curator?: string | null;
+  event_curator: string;
   event_timeline: EventSegments[];
   guest_details: GuestDetails[];
   title: string;
@@ -59,6 +59,7 @@ export interface GuestDetails {
   guest_weight: number;
   max_ticket_limit: number;
   ticket_cost: Coin[];
+  total_ticket_limit: number;
 }
 export interface Coin {
   amount: Uint128;
