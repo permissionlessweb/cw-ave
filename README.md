@@ -89,15 +89,10 @@ costs:
 ## Governance 
 Explore investor DAO structure: https://docs.daodao.zone/
 
-
 ## LICENSE FEE 
+ one time, on-chain license fee (paid during factory contract instantiation)
+## DEVELOPMENT FEE
+3% of all ticket sales
 
-| Chain | Fee | Destination |
-| --- | --- | --- |
-| `event_curator` | `Option<String>` | The curator of the event. Defaults to the sender if not set. |
-| `title` | `String` | The title or label for the contract and frontend. |
-| `description` | `String` | A description of the event for recordkeeping purposes. |
-| `usher_admins` | `Vec<Member>` | A list of admin keys authorized to manually modify the event attendee contract. |
-| `guest_details` | `Vec<GuestDetails>` | Details about the guests. |
-| `cw420` | `u64` | The code-id of the cw420 contract. |
-| `event_timeline` | `Vec<EventSegments>` | A timeline of the event stages. |
+## License
+This project is licensed under the BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
