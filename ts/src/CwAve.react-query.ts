@@ -5,7 +5,7 @@
 */
 
 import { UseQueryOptions, useQuery } from "@tanstack/react-query";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfTupleOfUintAndEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegment, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegmentRes, EventSegmentRes, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 import { CwAveQueryClient } from "./CwAve.client";
 export const cwAveQueryKeys = {
   contract: ([{
@@ -57,10 +57,10 @@ export const cwAveQueries = {
     ...options,
     enabled: !!client && (options?.enabled != undefined ? options.enabled : true)
   }),
-  eventSegments: <TData = ArrayOfTupleOfUintAndEventSegments,>({
+  eventSegments: <TData = ArrayOfEventSegmentRes,>({
     client,
     options
-  }: CwAveEventSegmentsQuery<TData>): UseQueryOptions<ArrayOfTupleOfUintAndEventSegments, Error, TData> => ({
+  }: CwAveEventSegmentsQuery<TData>): UseQueryOptions<ArrayOfEventSegmentRes, Error, TData> => ({
     queryKey: cwAveQueryKeys.eventSegments(client?.contractAddress),
     queryFn: () => client.eventSegments(),
     ...options,
@@ -212,12 +212,12 @@ export function useCwAveGuestTypeDetailsByWeightQuery<TData = GuestDetails>({
     guestWeight: args.guestWeight
   }), options);
 }
-export interface CwAveEventSegmentsQuery<TData> extends CwAveReactQuery<ArrayOfTupleOfUintAndEventSegments, TData> {}
-export function useCwAveEventSegmentsQuery<TData = ArrayOfTupleOfUintAndEventSegments>({
+export interface CwAveEventSegmentsQuery<TData> extends CwAveReactQuery<ArrayOfEventSegmentRes, TData> {}
+export function useCwAveEventSegmentsQuery<TData = ArrayOfEventSegmentRes>({
   client,
   options
 }: CwAveEventSegmentsQuery<TData>) {
-  return useQuery<ArrayOfTupleOfUintAndEventSegments, Error, TData>(cwAveQueryKeys.eventSegments(client.contractAddress), () => client.eventSegments(), options);
+  return useQuery<ArrayOfEventSegmentRes, Error, TData>(cwAveQueryKeys.eventSegments(client.contractAddress), () => client.eventSegments(), options);
 }
 export interface CwAveConfigQuery<TData> extends CwAveReactQuery<Config, TData> {}
 export function useCwAveConfigQuery<TData = Config>({

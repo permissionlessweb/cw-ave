@@ -9,10 +9,9 @@ use crate::state::{
 pub struct InstantiateMsg {
     /// if not set, sender
     pub event_curator: String,
-    /// Dao one must be a member of to make use of shitstraps
     /// label for contract & front end
     pub title: String,
-    /// description of shitstrap for recordkeeping
+    /// description of avEvent for recordkeeping
     pub description: String,
     /// list of admin keys able to checkin guests
     pub usher_admins: Vec<Member>,

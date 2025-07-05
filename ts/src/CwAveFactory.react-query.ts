@@ -5,7 +5,7 @@
 */
 
 import { UseQueryOptions, useQuery } from "@tanstack/react-query";
-import { InstantiateMsg, ExecuteMsg, Timestamp, Uint64, EventSegmentAccessType, Uint128, Action, Expiration, EventSegments, GuestDetails, Coin, Member, QueryMsg, ArrayOfAvEventContract, AvEventContract, Addr, OwnershipForAddr } from "./CwAveFactory.types";
+import { InstantiateMsg, ExecuteMsg, Timestamp, Uint64, EventSegmentAccessType, Uint128, Action, Expiration, EventSegment, GuestDetails, Coin, Member, QueryMsg, ArrayOfAvEventContract, AvEventContract, Addr, OwnershipForAddr } from "./CwAveFactory.types";
 import { CwAveFactoryQueryClient } from "./CwAveFactory.client";
 export const cwAveFactoryQueryKeys = {
   contract: ([{

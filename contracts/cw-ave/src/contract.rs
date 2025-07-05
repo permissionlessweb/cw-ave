@@ -18,7 +18,7 @@ use cw2::set_contract_version;
 use cw4::Member;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:cw-shit-strap";
+const CONTRACT_NAME: &str = "crates.io:cw-ave";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub const NAMESPACE: &[u8] = b"aves";

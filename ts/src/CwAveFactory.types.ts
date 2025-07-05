@@ -8,7 +8,7 @@ export interface InstantiateMsg {
   cw420: number;
   description: string;
   event_curator: string;
-  event_timeline: EventSegments[];
+  event_timeline: EventSegment[];
   guest_details: GuestDetails[];
   title: string;
   usher_admins: Member[];
@@ -20,7 +20,7 @@ export type ExecuteMsg = {
   };
 } | {
   update_code_id: {
-    shitstrap_code_id: number;
+    cw_ave_code_id: number;
   };
 } | {
   update_ownership: Action;
@@ -48,7 +48,7 @@ export type Expiration = {
 } | {
   never: {};
 };
-export interface EventSegments {
+export interface EventSegment {
   end: Timestamp;
   stage_description: string;
   start: Timestamp;

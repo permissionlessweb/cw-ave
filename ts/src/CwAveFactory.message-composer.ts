@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { InstantiateMsg, ExecuteMsg, Timestamp, Uint64, EventSegmentAccessType, Uint128, Action, Expiration, EventSegments, GuestDetails, Coin, Member, QueryMsg, ArrayOfAvEventContract, AvEventContract, Addr, OwnershipForAddr } from "./CwAveFactory.types";
+import { InstantiateMsg, ExecuteMsg, Timestamp, Uint64, EventSegmentAccessType, Uint128, Action, Expiration, EventSegment, GuestDetails, Coin, Member, QueryMsg, ArrayOfAvEventContract, AvEventContract, Addr, OwnershipForAddr } from "./CwAveFactory.types";
 export interface CwAveFactoryMsg {
   contractAddress: string;
   sender: string;
@@ -19,9 +19,9 @@ export interface CwAveFactoryMsg {
     label: string;
   }, funds_?: Coin[]) => MsgExecuteContractEncodeObject;
   updateCodeId: ({
-    shitstrapCodeId
+    cwAveCodeId
   }: {
-    shitstrapCodeId: number;
+    cwAveCodeId: number;
   }, funds_?: Coin[]) => MsgExecuteContractEncodeObject;
   updateOwnership: (action: Action, funds_?: Coin[]) => MsgExecuteContractEncodeObject;
 }
@@ -60,9 +60,9 @@ export class CwAveFactoryMsgComposer implements CwAveFactoryMsg {
     };
   };
   updateCodeId = ({
-    shitstrapCodeId
+    cwAveCodeId
   }: {
-    shitstrapCodeId: number;
+    cwAveCodeId: number;
   }, funds_?: Coin[]): MsgExecuteContractEncodeObject => {
     return {
       typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
@@ -71,7 +71,7 @@ export class CwAveFactoryMsgComposer implements CwAveFactoryMsg {
         contract: this.contractAddress,
         msg: toUtf8(JSON.stringify({
           update_code_id: {
-            shitstrap_code_id: shitstrapCodeId
+            cw_ave_code_id: cwAveCodeId
           }
         })),
         funds: funds_

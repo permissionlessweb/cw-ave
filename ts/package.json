@@ -1,7 +1,7 @@
 {
   "name": "@shitmos/shit_strap",
   "version": "0.9.0",
-  "description": "Shitstrap Contract Front End Library",
+  "description": "CwAve Contract Front End Library",
   "main": "src/main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

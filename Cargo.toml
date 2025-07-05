@@ -10,7 +10,7 @@ resolver = "2"
 
 [workspace.package]
 license = "BSD-3-Clause"
-repository = "https://github.com/shitmos/shitstrap"
+repository = "https://github.com/permissionlessweb/cw-ave"
 edition = "2021"
 resolver = "2"
 version = "0.0.1"

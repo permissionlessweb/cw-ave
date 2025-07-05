@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { InstantiateMsg, ExecuteMsg, Timestamp, Uint64, EventSegmentAccessType, Uint128, Action, Expiration, EventSegments, GuestDetails, Coin, Member, QueryMsg, ArrayOfAvEventContract, AvEventContract, Addr, OwnershipForAddr } from "./CwAveFactory.types";
+import { InstantiateMsg, ExecuteMsg, Timestamp, Uint64, EventSegmentAccessType, Uint128, Action, Expiration, EventSegment, GuestDetails, Coin, Member, QueryMsg, ArrayOfAvEventContract, AvEventContract, Addr, OwnershipForAddr } from "./CwAveFactory.types";
 export interface CwAveFactoryReadOnlyInterface {
   contractAddress: string;
   listAvEventContracts: ({
@@ -143,9 +143,9 @@ export interface CwAveFactoryInterface extends CwAveFactoryReadOnlyInterface {
     label: string;
   }, fee_?: number | StdFee | "auto", memo_?: string, funds_?: Coin[]) => Promise<ExecuteResult>;
   updateCodeId: ({
-    shitstrapCodeId
+    cwAveCodeId
   }: {
-    shitstrapCodeId: number;
+    cwAveCodeId: number;
   }, fee_?: number | StdFee | "auto", memo_?: string, funds_?: Coin[]) => Promise<ExecuteResult>;
   updateOwnership: (action: Action, fee_?: number | StdFee | "auto", memo_?: string, funds_?: Coin[]) => Promise<ExecuteResult>;
 }
@@ -179,13 +179,13 @@ export class CwAveFactoryClient extends CwAveFactoryQueryClient implements CwAve
     }, fee_, memo_, funds_);
   };
   updateCodeId = async ({
-    shitstrapCodeId
+    cwAveCodeId
   }: {
-    shitstrapCodeId: number;
+    cwAveCodeId: number;
   }, fee_: number | StdFee | "auto" = "auto", memo_?: string, funds_?: Coin[]): Promise<ExecuteResult> => {
     return await this.client.execute(this.sender, this.contractAddress, {
       update_code_id: {
-        shitstrap_code_id: shitstrapCodeId
+        cw_ave_code_id: cwAveCodeId
       }
     }, fee_, memo_, funds_);
   };

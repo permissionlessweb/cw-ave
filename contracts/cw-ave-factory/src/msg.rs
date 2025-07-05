@@ -21,7 +21,7 @@ pub enum ExecuteMsg {
 
     /// Callable only by the current owner. Updates the code ID used
     /// while instantiating vesting contracts.
-    UpdateCodeId { shitstrap_code_id: u64 },
+    UpdateCodeId { cw_ave_code_id: u64 },
 }
 
 #[cw_serde]

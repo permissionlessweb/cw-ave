@@ -18,12 +18,12 @@ export interface InstantiateMsg {
   cw420: number;
   description: string;
   event_curator: string;
-  event_timeline: EventSegments[];
+  event_timeline: EventSegment[];
   guest_details: GuestDetails[];
   title: string;
   usher_admins: Member[];
 }
-export interface EventSegments {
+export interface EventSegment {
   end: Timestamp;
   stage_description: string;
   start: Timestamp;
@@ -112,7 +112,11 @@ export interface Config {
   event_usher_contract: Addr;
   title: string;
 }
-export type ArrayOfTupleOfUintAndEventSegments = [number, EventSegments][];
+export type ArrayOfEventSegmentRes = EventSegmentRes[];
+export interface EventSegmentRes {
+  seg_id: number;
+  segment: EventSegment;
+}
 export type Boolean = boolean;
 export type ArrayOfBoolean = boolean[];
 export type ArrayOfGuestDetails = GuestDetails[];

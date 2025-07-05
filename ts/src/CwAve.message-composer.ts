@@ -7,7 +7,7 @@
 import { MsgExecuteContractEncodeObject } from "@cosmjs/cosmwasm-stargate";
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { toUtf8 } from "@cosmjs/encoding";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfTupleOfUintAndEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegment, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegmentRes, EventSegmentRes, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 export interface CwAveMsg {
   contractAddress: string;
   sender: string;

@@ -64,10 +64,10 @@
           "update_code_id": {
             "type": "object",
             "required": [
-              "shitstrap_code_id"
+              "cw_ave_code_id"
             ],
             "properties": {
-              "shitstrap_code_id": {
+              "cw_ave_code_id": {
                 "type": "integer",
                 "format": "uint64",
                 "minimum": 0.0
@@ -160,6 +160,27 @@
         },
         "additionalProperties": false
       },
+      "EventSegment": {
+        "description": "Defines timelengths of a specific stage of an event. For example, a private screening could have 2 shows, so we define the start and end for both.",
+        "type": "object",
+        "required": [
+          "end",
+          "stage_description",
+          "start"
+        ],
+        "properties": {
+          "end": {
+            "$ref": "#/definitions/Timestamp"
+          },
+          "stage_description": {
+            "type": "string"
+          },
+          "start": {
+            "$ref": "#/definitions/Timestamp"
+          }
+        },
+        "additionalProperties": false
+      },
       "EventSegmentAccessType": {
         "oneOf": [
           {
@@ -204,27 +225,6 @@
             "additionalProperties": false
           }
         ]
-      },
-      "EventSegments": {
-        "description": "Defines timelengths of a specific stage of an event. For example, a private screening could have 2 shows, so we define the start and end for both.",
-        "type": "object",
-        "required": [
-          "end",
-          "stage_description",
-          "start"
-        ],
-        "properties": {
-          "end": {
-            "$ref": "#/definitions/Timestamp"
-          },
-          "stage_description": {
-            "type": "string"
-          },
-          "start": {
-            "$ref": "#/definitions/Timestamp"
-          }
-        },
-        "additionalProperties": false
       },
       "Expiration": {
         "description": "Expiration represents a point in time when some event happens. It can compare with a BlockInfo and will return is_expired() == true once the condition is hit (and for every block in the future)",
@@ -338,7 +338,7 @@
             "minimum": 0.0
           },
           "description": {
-            "description": "description of shitstrap for recordkeeping",
+            "description": "description of avEvent for recordkeeping",
             "type": "string"
           },
           "event_curator": {
@@ -349,7 +349,7 @@
             "description": "timeline of events segments",
             "type": "array",
             "items": {
-              "$ref": "#/definitions/EventSegments"
+              "$ref": "#/definitions/EventSegment"
             }
           },
           "guest_details": {
@@ -360,7 +360,7 @@
             }
           },
           "title": {
-            "description": "Dao one must be a member of to make use of shitstraps label for contract & front end",
+            "description": "label for contract & front end",
             "type": "string"
           },
           "usher_admins": {

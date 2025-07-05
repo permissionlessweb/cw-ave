@@ -353,7 +353,7 @@ fn test_update_code_id() {
 
     // Update code ID as owner
     let update_msg = ExecuteMsg::UpdateCodeId {
-        shitstrap_code_id: new_cw_ave_code_id,
+        cw_ave_code_id: new_cw_ave_code_id,
     };
 
     app.execute_contract(
@@ -398,7 +398,7 @@ fn test_unauthorized_update_code_id() {
 
     // Try to update code ID as non-owner
     let update_msg = ExecuteMsg::UpdateCodeId {
-        shitstrap_code_id: new_cw_ave_code_id,
+        cw_ave_code_id: new_cw_ave_code_id,
     };
 
     let err = app

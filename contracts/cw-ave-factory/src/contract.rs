@@ -13,7 +13,7 @@ use cw_storage_plus::Bound;
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::state::{avevent_contracts, AvEventContract, SHITSTRAP_CODE_ID, TMP_INSTANTIATOR_INFO};
+use crate::state::{avevent_contracts, AvEventContract, AVEVENT_CODE_ID, TMP_INSTANTIATOR_INFO};
 
 pub(crate) const CONTRACT_NAME: &str = "crates.io:cw-ave-factory";
 pub(crate) const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -30,7 +30,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     cw_ownable::initialize_owner(deps.storage, deps.api, msg.owner.as_deref())?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    SHITSTRAP_CODE_ID.save(deps.storage, &msg.cw_ave_id)?;
+    AVEVENT_CODE_ID.save(deps.storage, &msg.cw_ave_id)?;
 
     // HARDCODED LISENSE FEE
     let license_fee = av_event_helpers::get_license_fee(&env.block.chain_id)?;
@@ -62,15 +62,15 @@ pub fn execute(
         ExecuteMsg::CreateNativeAvEventContract {
             instantiate_msg,
             label,
-        } => execute_instantiate_native_shitstrap_contract(deps, info, instantiate_msg, label),
+        } => execute_instantiate_native_ave_contract(deps, info, instantiate_msg, label),
         ExecuteMsg::UpdateOwnership(action) => execute_update_owner(deps, info, env, action),
-        ExecuteMsg::UpdateCodeId { shitstrap_code_id } => {
-            execute_update_code_id(deps, info, shitstrap_code_id)
+        ExecuteMsg::UpdateCodeId { cw_ave_code_id } => {
+            execute_update_code_id(deps, info, cw_ave_code_id)
         }
     }
 }
 
-pub fn execute_instantiate_native_shitstrap_contract(
+pub fn execute_instantiate_native_ave_contract(
     deps: DepsMut,
     info: MessageInfo,
     instantiate_msg: AvEventInstantiateMsg,
@@ -103,7 +103,7 @@ pub fn instantiate_contract(
         return Err(ContractError::Unauthorized {});
     }
 
-    let code_id = SHITSTRAP_CODE_ID.load(deps.storage)?;
+    let code_id = AVEVENT_CODE_ID.load(deps.storage)?;
 
     // Instantiate the specified contract with owner as the admin.
     let instantiate = WasmMsg::Instantiate {
@@ -137,7 +137,7 @@ pub fn execute_update_code_id(
     shistrap_code_id: u64,
 ) -> Result<Response, ContractError> {
     cw_ownable::assert_owner(deps.storage, &info.sender)?;
-    SHITSTRAP_CODE_ID.save(deps.storage, &shistrap_code_id)?;
+    AVEVENT_CODE_ID.save(deps.storage, &shistrap_code_id)?;
     Ok(Response::default()
         .add_attribute("action", "update_code_id")
         .add_attribute("shistrap_code_id", shistrap_code_id.to_string()))
@@ -261,7 +261,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         //     Ok(to_json_binary(&res)?)
         // }
         QueryMsg::Ownership {} => to_json_binary(&cw_ownable::get_ownership(deps.storage)?),
-        QueryMsg::CodeId {} => to_json_binary(&SHITSTRAP_CODE_ID.load(deps.storage)?),
+        QueryMsg::CodeId {} => to_json_binary(&AVEVENT_CODE_ID.load(deps.storage)?),
     }
 }
 
@@ -278,11 +278,6 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
                     .value,
             )?;
 
-            // // Query new shistrap payment contract for info
-            // let shit_strap: AvEventConfig = deps
-            //     .querier
-            //     .query_wasm_smart(contract_addr.clone(), &ShitstrapQueryMsg::Config {})?;
-
             let instantiator = TMP_INSTANTIATOR_INFO.load(deps.storage)?;
 
             // Save shistrap contract payment info
@@ -298,7 +293,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             // Clear tmp instatiator info
             TMP_INSTANTIATOR_INFO.remove(deps.storage);
 
-            Ok(Response::default().add_attribute("new_shitstrap_contract", contract_addr))
+            Ok(Response::default().add_attribute("new_ave_contract", contract_addr))
         }
         _ => Err(ContractError::UnknownReplyId { id: msg.id }),
     }
