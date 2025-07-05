@@ -1,5 +1,4 @@
 use av_event_helpers::get_license_fee;
-use cosmwasm_std::coin;
 use cw_ave_factory::msg::InstantiateMsg;
 use cw_orch::{
     daemon::networks::LOCAL_JUNO,

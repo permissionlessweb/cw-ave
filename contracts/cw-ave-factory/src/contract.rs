@@ -2,7 +2,7 @@ use av_event_helpers::LICENSE_CANONICAL_ADDR;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    coin, to_json_binary, BankMsg, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env,
+    to_json_binary, BankMsg, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Order, Reply, Response, StdResult, SubMsg, WasmMsg,
 };
 use cosmwasm_std::{Addr, Coin};
@@ -47,7 +47,7 @@ pub fn instantiate(
             .add_attribute("creator", info.sender)
             .add_message(base_fee))
     } else {
-        return Err(ContractError::LicenseFeeRequired {});
+        Err(ContractError::LicenseFeeRequired {})
     }
 }
 

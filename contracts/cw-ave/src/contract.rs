@@ -2,7 +2,7 @@ use crate::error::ContractError;
 use crate::msg::{EventSegmentRes, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{
     generate_instantiate_salt2, preamble_msg_arb_036, sha256, CheckInDetails, CheckInSignatureData,
-    Config, EventSegment, GuestDetails, RegisteringEventAddressAndPayment, RegisteringGuest,
+    Config, GuestDetails, RegisteringEventAddressAndPayment, RegisteringGuest,
     TicketPaymentOption, ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS, RESERVED_TICKETS,
     TOTAL_RESERVED_BY_GUEST,
 };
@@ -270,7 +270,7 @@ pub fn perform_ticket_purchase(
             dev_addr.to_string(),
             &info.funds,
             gd.ticket_cost,
-            &to_process,
+            to_process,
         );
 
         msgs.extend([

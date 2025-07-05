@@ -1,5 +1,5 @@
 use av_event_helpers::get_license_fee;
-use cosmwasm_std::{coin, coins, Addr, Timestamp};
+use cosmwasm_std::{coin, coins, Timestamp};
 use cw4::Member;
 use cw_ave::msg::{ExecuteMsg, InstantiateMsg, QueryMsgFns};
 use cw_ave::state::{
@@ -9,9 +9,9 @@ use cw_ave::state::{
 use cw_ave_factory::msg::InstantiateMsg as FactoryInitMsg;
 use cw_orch::{anyhow, prelude::*};
 
-use crate::interfaces::{CwAve, CwAveFactory, CwAveSuite};
+use crate::interfaces::CwAveSuite;
 
-//// INIT UNIT TESTS
+/// INIT UNIT TESTS
 // calling contract with funds:
 // -  suite.cw_ave.execute(execute_msg, coins)
 // calling contract w/out funds (queries & execute)
@@ -354,7 +354,7 @@ fn test_claim_ticket_payments_curator_only() -> anyhow::Result<()> {
 
 #[test]
 fn test_query_functions() -> anyhow::Result<()> {
-    let mut t = TestEnv::setup()?;
+    let t = TestEnv::setup()?;
 
     // Test config query
     let config: Config = t.suite.cw_ave.config()?;
