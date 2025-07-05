@@ -2,7 +2,7 @@ use cw_orch::{interface, prelude::*};
 
 use cw420::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
-pub const CONTRACT_ID: &str = "cw4-group";
+pub const CONTRACT_ID: &str = "cw420";
 
 #[interface(InstantiateMsg, ExecuteMsg, QueryMsg,Empty,  id = CONTRACT_ID)]
 pub struct Cw420;
@@ -11,7 +11,7 @@ impl<Chain> Uploadable for Cw420<Chain> {
     /// Return the path to the wasm file corresponding to the contract
     fn wasm(_chain: &ChainInfoOwned) -> WasmPath {
         artifacts_dir_from_workspace!()
-            .find_wasm_path("cw4-group")
+            .find_wasm_path("cw420")
             .unwrap()
     }
     /// Returns a CosmWasm contract wrapper

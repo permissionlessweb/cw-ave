@@ -1,5 +1,6 @@
+use av_event_helpers::LICENSE_CANONICAL_ADDR;
 use cosmwasm_std::testing::mock_dependencies;
-use cosmwasm_std::{coins, Addr, Api, Coin, Empty, Timestamp, Uint128};
+use cosmwasm_std::{coins, Addr, Api, CanonicalAddr, Coin, Empty, Timestamp, Uint128};
 use cw4::Member;
 use cw_ave::msg::InstantiateMsg as AvEventInstantiateMsg;
 use cw_ave::state::{EventSegment, EventSegmentAccessType, GuestDetails};
@@ -121,14 +122,17 @@ fn create_valid_ave_instantiate_msg(cw420_code_id: u64) -> AvEventInstantiateMsg
 
 #[test]
 fn canonical_addr() {
-    const ENTROPY: &str = "eretsketer";
+    let canon = CanonicalAddr::from(LICENSE_CANONICAL_ADDR.as_bytes());
     let btsg = mock_dependencies().api.with_prefix("btsg");
     let cosmos = mock_dependencies().api.with_prefix("cosmos");
+    let juno = mock_dependencies().api.with_prefix("juno");
 
-    let btsg_hra = btsg.addr_make(ENTROPY);
-    let cosmos_hra = cosmos.addr_make(ENTROPY);
+    let btsg_hra = btsg.addr_humanize(&canon).unwrap();
+    let cosmos_hra = cosmos.addr_humanize(&canon).unwrap();
+    let juno_hra = juno.addr_humanize(&canon).unwrap();
     println!("{:#?}", btsg_hra.to_string());
     println!("{:#?}", cosmos_hra.to_string());
+    println!("{:#?}", juno_hra.to_string());
 
     let btsg_can = btsg.addr_canonicalize(btsg_hra.as_str()).unwrap();
     let cosmos_can = cosmos.addr_canonicalize(cosmos_hra.as_str()).unwrap();

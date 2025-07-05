@@ -2,11 +2,11 @@ use crate::error::ContractError;
 use crate::msg::{EventSegmentRes, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{
     generate_instantiate_salt2, preamble_msg_arb_036, sha256, CheckInDetails, CheckInSignatureData,
-    Config, GuestDetails, RegisteringEventAddressAndPayment, RegisteringGuest,
-    TicketPaymentOption, ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS, RESERVED_TICKETS,
+    Config, GuestDetails, RegisteringEventAddressAndPayment, RegisteringGuest, TicketPaymentOption,
+    ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS, LICENSE_ADDR, RESERVED_TICKETS,
     TOTAL_RESERVED_BY_GUEST,
 };
-use av_event_helpers::LICENSE_CANONICAL_ADDR;
+use av_event_helpers::{get_license_addr, LICENSE_CANONICAL_ADDR};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 
@@ -31,6 +31,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    LICENSE_ADDR.save(deps.storage, &get_license_addr(&env.block.chain_id)?)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     // set owner
     let curator = deps.api.addr_validate(&msg.event_curator.clone())?;
@@ -245,10 +246,6 @@ pub fn perform_ticket_purchase(
     let cfg = CONFIG.load(deps.storage)?;
     let mut msgs = Vec::new();
 
-    let dev_addr = deps
-        .api
-        .addr_humanize(&CanonicalAddr::from(LICENSE_CANONICAL_ADDR.as_bytes()))?;
-
     for guest in guests {
         // check if guest type exists
         let gd = GUEST_DETAILS.load(deps.storage, guest.guest_weight)?;
@@ -267,7 +264,7 @@ pub fn perform_ticket_purchase(
 
         // if len of guest.reap is greater than gd.limit, strip the # of entries in guest.reap from the object so that we will reach the limit and not error.
         let (reserved, remaining_funds, dev_fee_msg) = count_tickets_and_remainder(
-            dev_addr.to_string(),
+            LICENSE_ADDR.load(deps.storage)?.to_string(),
             &info.funds,
             gd.ticket_cost,
             to_process,

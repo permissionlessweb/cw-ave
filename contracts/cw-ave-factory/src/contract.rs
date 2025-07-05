@@ -1,9 +1,9 @@
-use av_event_helpers::LICENSE_CANONICAL_ADDR;
+use av_event_helpers::get_license_addr;
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_json_binary, BankMsg, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Order, Reply, Response, StdResult, SubMsg, WasmMsg,
+    to_json_binary, BankMsg, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order, Reply,
+    Response, StdResult, SubMsg, WasmMsg,
 };
 use cosmwasm_std::{Addr, Coin};
 
@@ -36,10 +36,7 @@ pub fn instantiate(
     let license_fee = av_event_helpers::get_license_fee(&env.block.chain_id)?;
     if info.funds.iter().any(|e| e == &license_fee) {
         let base_fee = CosmosMsg::Bank(BankMsg::Send {
-            to_address: deps
-                .api
-                .addr_humanize(&CanonicalAddr::from(LICENSE_CANONICAL_ADDR.as_bytes()))?
-                .to_string(),
+            to_address: get_license_addr(&env.block.chain_id)?.to_string(),
             amount: vec![license_fee],
         });
         Ok(Response::new()

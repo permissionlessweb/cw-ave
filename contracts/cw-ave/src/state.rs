@@ -15,6 +15,8 @@ pub const TOTAL_RESERVED_BY_GUEST: Map<u64, u32> = Map::new("trbg");
 pub const EVENT_STAGES: Map<u64, EventSegment> = Map::new("es");
 
 pub const ATTENDANCE_RECORD: Map<(&String, u64), bool> = Map::new("rt");
+
+pub const LICENSE_ADDR: Item<Addr>= Item::new("laddr");
 #[cw_serde]
 pub struct Config {
     pub curator: Addr,

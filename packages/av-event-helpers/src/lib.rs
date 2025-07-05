@@ -1,4 +1,4 @@
-use cosmwasm_std::{coin, Coin, StdResult};
+use cosmwasm_std::{coin, Addr, Coin, StdResult};
 
 pub const LICENSE_CANONICAL_ADDR: &str = "58855806243FE9F4FB4023C8D149DF9AF1C3891E";
 
@@ -22,6 +22,20 @@ pub fn get_license_fee(chain_id: &str) -> StdResult<Coin> {
         "acre_9052-1" => Ok(coin(420_000_000u128, "aacre")),
         _ => Err(cosmwasm_std::StdError::generic_err(
             "no license fee for this chain ",
+        )),
+    }
+}
+
+pub fn get_license_addr(chain_id: &str) -> StdResult<Addr> {
+    match chain_id {
+        "juno-1" => Ok(Addr::unchecked(
+            "juno1tzz4sp3y8l5lf76qy0ydzjwlntcu8zg7t63p68",
+        )),
+        "bitsong-2b" => Ok(Addr::unchecked(
+            "bitsong1schul8k23ryty6ar324mzee0axjx0rxec5t6hk",
+        )),
+        _ => Err(cosmwasm_std::StdError::generic_err(
+            "no license address for this chain ",
         )),
     }
 }

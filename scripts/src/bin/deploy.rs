@@ -1,7 +1,7 @@
 use av_event_helpers::get_license_fee;
 use cw_ave_factory::msg::InstantiateMsg;
 use cw_orch::{
-    daemon::networks::LOCAL_JUNO,
+    daemon::networks::{JUNO_1, LOCAL_JUNO},
     prelude::{networks::ChainInfo, *},
 };
 use scripts::interfaces::CwAveSuite;
@@ -21,8 +21,6 @@ fn full_deploy(networks: Vec<ChainInfo>) -> cw_orch::anyhow::Result<()> {
             Some(&chain.sender_addr()),
             &[get_license_fee(&chain.chain_info().chain_id)?],
         )?;
-
-        
     }
 
     Ok(())
@@ -34,6 +32,6 @@ fn main() {
 
     use dotenv::dotenv;
 
-    let networks = vec![LOCAL_JUNO];
+    let networks = vec![JUNO_1];
     full_deploy(networks).unwrap();
 }

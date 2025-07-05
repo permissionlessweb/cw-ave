@@ -54,8 +54,8 @@ impl<Chain: CwEnv> Deploy<Chain> for CwAveSuite<Chain> {
         let suite = Self::store_on(chain.clone())?;
 
         // instantiate factory
-
         // call factory
+
         Ok(suite)
     }
 
