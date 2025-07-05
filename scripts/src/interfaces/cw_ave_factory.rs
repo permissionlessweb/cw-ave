@@ -22,7 +22,8 @@ impl<Chain> Uploadable for CwAveFactory<Chain> {
                 cw_ave_factory::contract::instantiate,
                 cw_ave_factory::contract::query,
             )
-            .with_migrate(cw_ave_factory::contract::migrate),
+            .with_migrate(cw_ave_factory::contract::migrate)
+            .with_reply(cw_ave_factory::contract::reply),
         )
     }
 }

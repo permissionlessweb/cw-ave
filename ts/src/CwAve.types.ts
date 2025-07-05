@@ -112,7 +112,7 @@ export interface Config {
   event_usher_contract: Addr;
   title: string;
 }
-export type ArrayOfEventSegments = EventSegments[];
+export type ArrayOfTupleOfUintAndEventSegments = [number, EventSegments][];
 export type Boolean = boolean;
 export type ArrayOfBoolean = boolean[];
 export type ArrayOfGuestDetails = GuestDetails[];

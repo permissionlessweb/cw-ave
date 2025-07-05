@@ -7,11 +7,20 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.79"
-cosmrs = "0.15.0"
-cosmwasm-std= { workspace = true }
-cw-orch = { workspace = true, features = ["daemon"] }
+
+cosmwasm-std = { workspace = true }
+cw4 = { workspace = true }
 dotenv = "0.15.0"
 env_logger = { version = "0.11.3", default-features = false }
 cw-ave = {  path = "../contracts/cw-ave" }
+cw420 = {  path = "../contracts/cw420" }
+av-event-helpers = {  path = "../packages/av-event-helpers" }
 cw-ave-factory = {  path = "../contracts/cw-ave-factory" }
 clap = "4.5.23"
+cw-orch = { workspace = true, features = ["daemon"] }
+
+[[bin]]
+name              = "deploy"
+ 
+ 
+[dev-dependencies]

@@ -19,3 +19,12 @@
 // ensure ticket limit is enforced per ticket purchaser
 // ensure ticket limit is enforced for guestdetails 
 // ensure funds are going to correct destination 
+
+
+// test count_tickets_and_remainder function 
+// - ensure dev fee is accurate
+// - ensure expected amount of tickets are set to be allocated 
+
+// CHECKIN GUEST
+// only event ushers can checkin guest
+

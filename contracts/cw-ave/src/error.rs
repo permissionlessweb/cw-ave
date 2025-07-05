@@ -18,11 +18,20 @@ pub enum ContractError {
     #[error("You are trying to reserve more than the limit for a single wallet.")]
     CannotReserveTicketCount {},
 
+    #[error("NoReservedTicketsForGuest.")]
+    NoReservedTicketsForGuest {},
+
     #[error("end of the previous event stage must come before the start of the next event stage.")]
     OverlappingEventDates {},
 
     #[error("event stage start must come before event stage end.")]
     InvalidEventDates {},
+
+    #[error("IncorrectCheckinSignature")]
+    IncorrectCheckinSignature {},
+
+    #[error("Guest has already checked in .")]
+    GuestHasCheckedInAllTickets {},
 
     #[error("No guest type exists.")]
     GuestTypeIncorrect {},

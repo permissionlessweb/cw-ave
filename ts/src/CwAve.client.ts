@@ -6,11 +6,11 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegments, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfTupleOfUintAndEventSegments, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 export interface CwAveReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<Config>;
-  eventSegments: () => Promise<ArrayOfEventSegments>;
+  eventSegments: () => Promise<ArrayOfTupleOfUintAndEventSegments>;
   guestTypeDetailsByWeight: ({
     guestWeight
   }: {
@@ -58,7 +58,7 @@ export class CwAveQueryClient implements CwAveReadOnlyInterface {
       config: {}
     });
   };
-  eventSegments = async (): Promise<ArrayOfEventSegments> => {
+  eventSegments = async (): Promise<ArrayOfTupleOfUintAndEventSegments> => {
     return this.client.queryContractSmart(this.contractAddress, {
       event_segments: {}
     });

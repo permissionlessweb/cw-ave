@@ -2,7 +2,7 @@ use cosmwasm_std::testing::mock_dependencies;
 use cosmwasm_std::{coins, Addr, Api, Coin, Empty, Timestamp, Uint128};
 use cw4::Member;
 use cw_ave::msg::InstantiateMsg as AvEventInstantiateMsg;
-use cw_ave::state::{EventSegmentAccessType, EventSegments, GuestDetails};
+use cw_ave::state::{EventSegment, EventSegmentAccessType, GuestDetails};
 use cw_ave::ContractError as CwAveContractError;
 use cw_multi_test::{App, BankSudo, Contract, ContractWrapper, Executor, SudoMsg};
 use cw_ownable::OwnershipError;
@@ -105,12 +105,12 @@ fn create_valid_ave_instantiate_msg(cw420_code_id: u64) -> AvEventInstantiateMsg
         ],
         cw420: cw420_code_id,
         event_timeline: vec![
-            EventSegments {
+            EventSegment {
                 stage_description: "Opening".to_string(),
                 start: Timestamp::from_seconds(1000),
                 end: Timestamp::from_seconds(2000),
             },
-            EventSegments {
+            EventSegment {
                 stage_description: "Main Event".to_string(),
                 start: Timestamp::from_seconds(2000),
                 end: Timestamp::from_seconds(3000),
@@ -129,15 +129,14 @@ fn canonical_addr() {
     let cosmos_hra = cosmos.addr_make(ENTROPY);
     println!("{:#?}", btsg_hra.to_string());
     println!("{:#?}", cosmos_hra.to_string());
-    
+
     let btsg_can = btsg.addr_canonicalize(btsg_hra.as_str()).unwrap();
     let cosmos_can = cosmos.addr_canonicalize(cosmos_hra.as_str()).unwrap();
-    
+
     // cosmos addr we are using to collectlicense fee
     let license_addr = "cosmos1tzz4sp3y8l5lf76qy0ydzjwlntcu8zg7agj6am";
     let license_can = cosmos.addr_canonicalize(license_addr).unwrap();
     println!("{:#?}", license_can.to_string());
-    
 
     assert_eq!(btsg_can, cosmos_can)
 }
@@ -459,7 +458,7 @@ fn test_list_contracts_pagination() {
                 event_segment_access: EventSegmentAccessType::SingleSegment {},
             }],
             cw420: cw420_code_id,
-            event_timeline: vec![EventSegments {
+            event_timeline: vec![EventSegment {
                 stage_description: "Main Event".to_string(),
                 start: Timestamp::from_seconds(1000),
                 end: Timestamp::from_seconds(2000),
@@ -650,7 +649,7 @@ fn test_query_by_instantiator_reverse() {
                 event_segment_access: EventSegmentAccessType::SingleSegment {},
             }],
             cw420: cw420_code_id,
-            event_timeline: vec![EventSegments {
+            event_timeline: vec![EventSegment {
                 stage_description: "Main Event".to_string(),
                 start: Timestamp::from_seconds(1000),
                 end: Timestamp::from_seconds(2000),
@@ -844,12 +843,12 @@ fn test_invalid_guest_details() {
         }],
         cw420: cw420_code_id,
         event_timeline: vec![
-            EventSegments {
+            EventSegment {
                 stage_description: "First Event".to_string(),
                 start: Timestamp::from_seconds(1000),
                 end: Timestamp::from_seconds(2000),
             },
-            EventSegments {
+            EventSegment {
                 stage_description: "Overlapping Event".to_string(),
                 start: Timestamp::from_seconds(1500), // Overlaps with first event
                 end: Timestamp::from_seconds(2500),

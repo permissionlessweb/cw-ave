@@ -6,12 +6,13 @@ use sha2::{Digest, Sha256};
 pub const CONFIG: Item<Config> = Item::new("c");
 /// Details about a specific guest type of an event (1 day, 2 day, vip, etc)
 pub const GUEST_DETAILS: Map<u64, GuestDetails> = Map::new("gd");
-/// A count of all tickets purchasedby a specific guest address.
-pub const RESERVED_TICKETS: Map<&String, TicketDetails> = Map::new("rt");
-
+/// A count of all tickets for a specific guest type.
+/// Does not take into account the ticket type, just the total number of tickets available to checkin with for a given ticket_address
+pub const RESERVED_TICKETS: Map<&u64, u128> = Map::new("rt");
+/// Total amount of tickets reseved for a given guest weight.
 pub const TOTAL_RESERVED_BY_GUEST: Map<u64, u32> = Map::new("trbg");
 
-pub const EVENT_STAGES: Map<u64, EventSegments> = Map::new("es");
+pub const EVENT_STAGES: Map<u64, EventSegment> = Map::new("es");
 
 pub const ATTENDANCE_RECORD: Map<(&String, u64), bool> = Map::new("rt");
 #[cw_serde]
@@ -32,7 +33,7 @@ pub struct RegisteringEventAddressAndPayment {
 
 #[cw_serde]
 pub struct RegisteringGuest {
-    /// label specific to type of guest a user is purchasing a ticket for
+    /// lthe type of ticket being purchased
     pub guest_weight: u64,
     // the list of wallet address that will checkin, and the payment token used to purchase ticket
     pub reap: Vec<RegisteringEventAddressAndPayment>,
@@ -51,6 +52,7 @@ pub struct CheckInDetails {
     pub signature: Binary,
     /// base64 binary of `CheckInSignatureData`
     pub signed_data: String,
+    /// bech32 address that purchased tickets & generated the signature
     pub ticket_addr: String,
     /// cosmos_sdk_proto::Any of the pubkey that generated the signature
     pub pubkey: Binary,
@@ -59,15 +61,10 @@ pub struct CheckInDetails {
 /// Defines timelengths of a specific stage of an event.
 /// For example, a private screening could have 2 shows, so we define the start and end for both.
 #[cw_serde]
-pub struct EventSegments {
+pub struct EventSegment {
     pub stage_description: String,
     pub start: Timestamp,
     pub end: Timestamp,
-}
-
-#[cw_serde]
-pub struct TicketDetails {
-    pub reserved: u128,
 }
 
 #[cw_serde]

@@ -3,7 +3,7 @@ use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 
 use crate::state::{
-    CheckInDetails, Config, EventSegments, GuestDetails, RegisteringGuest, TicketPaymentOption,
+    CheckInDetails, Config, EventSegment, GuestDetails, RegisteringGuest, TicketPaymentOption,
 };
 
 #[cw_serde]
@@ -22,7 +22,7 @@ pub struct InstantiateMsg {
     /// code-id of cw420 contract
     pub cw420: u64,
     /// timeline of events segments
-    pub event_timeline: Vec<EventSegments>,
+    pub event_timeline: Vec<EventSegment>,
 }
 
 #[cw_serde]
@@ -48,7 +48,7 @@ pub enum QueryMsg {
     #[returns(Config)]
     Config {},
     /// All segements for this event
-    #[returns(Vec<EventSegments>)]
+    #[returns(Vec<EventSegmentRes>)]
     EventSegments {},
     /// Details of a specific type of guest able to participate in event as.
     #[returns(GuestDetails)]
@@ -68,6 +68,12 @@ pub enum QueryMsg {
     /// All payment options available
     #[returns(Vec<TicketPaymentOption>)]
     AllTicketPaymentOptions {},
+}
+
+#[cw_serde]
+pub struct EventSegmentRes {
+    pub seg_id: u64,
+    pub segment: EventSegment,
 }
 
 #[cw_serde]

@@ -345,6 +345,7 @@
             "type": "string"
           },
           "ticket_addr": {
+            "description": "bech32 address that purchased tickets & generated the signature",
             "type": "string"
           }
         },
@@ -376,7 +377,7 @@
         ],
         "properties": {
           "guest_weight": {
-            "description": "label specific to type of guest a user is purchasing a ticket for",
+            "description": "lthe type of ticket being purchased",
             "type": "integer",
             "format": "uint64",
             "minimum": 0.0
@@ -638,10 +639,22 @@
     },
     "event_segments": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Array_of_EventSegments",
+      "title": "Array_of_Tuple_of_uint_and_EventSegments",
       "type": "array",
       "items": {
-        "$ref": "#/definitions/EventSegments"
+        "type": "array",
+        "items": [
+          {
+            "type": "integer",
+            "format": "uint",
+            "minimum": 0.0
+          },
+          {
+            "$ref": "#/definitions/EventSegments"
+          }
+        ],
+        "maxItems": 2,
+        "minItems": 2
       },
       "definitions": {
         "EventSegments": {
