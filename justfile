@@ -13,3 +13,7 @@ blob:
 schema:
     #!/bin/bash
     sh scripts/schema-and-codegen.sh
+
+deploy: 
+    #!/bin/bash
+    cargo run --bin deploy

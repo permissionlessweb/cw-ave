@@ -6,6 +6,7 @@
 - events: implement fully private events (black hole tech)
 - resale orderbook: ask-less orderbook 
 - homie checkin: set password for homie to check in on behalf of you.
+- existing admins & guest: provide existing cw4-group for admins & guests
 
 
 Av Events are disposiable (single use) smart contract, for coordination of IRL event ticket sales and use. In this repo there are two contracts:

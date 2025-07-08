@@ -3370,6 +3370,7 @@ dependencies = [
  "cw420",
  "dotenv",
  "env_logger",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, Uint128};
+use cosmwasm_std::{Coin, StdError, Uint128};
 use cw_ownable::OwnershipError;
 use cw_utils::{ParseReplyError, PaymentError};
 use thiserror::Error;
@@ -17,8 +17,8 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
-    #[error("LicenseFeeRequired")]
-    LicenseFeeRequired {},
+    #[error("LicenseFeeRequired:  {fee}")]
+    LicenseFeeRequired { fee: Coin },
 
     #[error("{0}")]
     ParseReplyError(#[from] ParseReplyError),

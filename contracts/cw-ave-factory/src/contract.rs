@@ -44,7 +44,7 @@ pub fn instantiate(
             .add_attribute("creator", info.sender)
             .add_message(base_fee))
     } else {
-        Err(ContractError::LicenseFeeRequired {})
+        Err(ContractError::LicenseFeeRequired { fee: license_fee })
     }
 }
 

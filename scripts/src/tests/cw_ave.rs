@@ -3,10 +3,10 @@ use cosmwasm_std::{coin, coins, Timestamp};
 use cw4::Member;
 use cw_ave::msg::{ExecuteMsg, InstantiateMsg, QueryMsgFns};
 use cw_ave::state::{
-    Config, EventSegmentAccessType, EventSegment, GuestDetails, RegisteringEventAddressAndPayment,
+    Config, EventSegment, EventSegmentAccessType, GuestDetails, RegisteringEventAddressAndPayment,
     RegisteringGuest,
 };
-use cw_ave_factory::msg::InstantiateMsg as FactoryInitMsg;
+use cw_ave_factory::msg::{ExecuteMsg as FactoryExecuteMsg, InstantiateMsg as FactoryInitMsg};
 use cw_orch::{anyhow, prelude::*};
 
 use crate::interfaces::CwAveSuite;
@@ -98,12 +98,20 @@ impl TestEnv<MockBech32> {
             event_timeline,
         };
 
-        suite.cw_ave.instantiate(
-            &instantiate_msg,
-            Some(&chain.sender_addr()),
-            &[get_license_fee(&chain.env_info().chain_id)?],
-        )?;
+        let cw_ave_addr = suite
+            .cw_ave_factory
+            .execute(
+                &FactoryExecuteMsg::CreateNativeAvEventContract {
+                    instantiate_msg: instantiate_msg,
+                    label: "checkin".into(),
+                },
+                &[get_license_fee(&chain.env_info().chain_id)?],
+            )?
+            .event_attr_value("wasm", "new_ave_contract")?;
 
+        suite.cw_ave.set_address(&Addr::unchecked(&cw_ave_addr));
+
+        println!("{:#?}", chain.state());
         Ok(TestEnv { mock: chain, suite })
     }
 }

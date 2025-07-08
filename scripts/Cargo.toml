@@ -17,6 +17,7 @@ cw420 = {  path = "../contracts/cw420" }
 av-event-helpers = {  path = "../packages/av-event-helpers" }
 cw-ave-factory = {  path = "../contracts/cw-ave-factory" }
 clap = "4.5.23"
+serde_json  = "1.0.125"
 cw-orch = { workspace = true, features = ["daemon"] }
 
 [[bin]]

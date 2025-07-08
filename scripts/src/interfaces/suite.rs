@@ -53,13 +53,11 @@ impl<Chain: CwEnv> Deploy<Chain> for CwAveSuite<Chain> {
     fn deploy_on(chain: Chain, data: Self::DeployData) -> Result<Self, Self::Error> {
         let suite = Self::store_on(chain.clone())?;
 
-        // instantiate factory
-        // call factory
-
         Ok(suite)
     }
 
     fn load_from(chain: Chain) -> Result<Self, Self::Error> {
+        // grab data from deployment state
         todo!()
     }
 }
