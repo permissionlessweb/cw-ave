@@ -9,25 +9,34 @@ pub const GUEST_DETAILS: Map<u64, GuestDetails> = Map::new("gd");
 /// A count of all tickets for a specific guest type.
 /// Does not take into account the ticket type, just the total number of tickets available to checkin with for a given ticket_address
 pub const RESERVED_TICKETS: Map<&u64, u128> = Map::new("rt");
-/// Total amount of tickets reseved for a given guest weight.
-pub const TOTAL_RESERVED_BY_GUEST: Map<u64, u32> = Map::new("trbg");
+/// Total amount of tickets reseved for a given guest weight:
+/// ex:(event_segment,tickets_reserved)
+pub const TOTAL_RESERVED_BY_GUEST_TYPE: Map<u64, u32> = Map::new("trbg");
 
 pub const EVENT_STAGES: Map<u64, EventSegment> = Map::new("es");
 
 pub const ATTENDANCE_RECORD: Map<(&String, u64), bool> = Map::new("rt");
+/// A list of tickets that a wallet has reserved for a different address than paid.
+pub const HOMIE_TICKETS: Map<&String, Vec<String>> = Map::new("ht");
 
-pub const LICENSE_ADDR: Item<Addr>= Item::new("laddr");
+pub const LICENSE_ADDR: Item<Addr> = Item::new("laddr");
 #[cw_serde]
 pub struct Config {
     pub curator: Addr,
     pub event_usher_contract: Addr,
     pub event_guest_contract: Addr,
     pub title: String,
+    pub description: String,
 }
 
 #[cw_serde]
+pub struct ReplaceHomieTicket {
+    pub old: String,
+    pub new: String,
+}
+#[cw_serde]
 pub struct RegisteringEventAddressAndPayment {
-    /// the ephemeral wallet being used for this specific event
+    /// the ephemeral wallet being used for this specific event.
     pub ticket_addr: String,
     /// the microdenomination of the token being payed for this registering guest
     pub payment_asset: String,
@@ -44,8 +53,9 @@ pub struct RegisteringGuest {
 #[cw_serde]
 pub struct CheckInSignatureData {
     pub event_contract_addr: String,
+    pub event_segment_ids: Vec<u64>,
+    pub homies_tickets: Vec<String>,
     pub usher_wallet_addr: String,
-    pub event_segment_id: u64,
 }
 
 #[cw_serde]
@@ -106,9 +116,16 @@ pub fn generate_instantiate_salt2(checksum: &Checksum, namespace: &[u8]) -> Bina
 pub enum EventSegmentAccessType {
     /// only checkin for this segment, not checking in for any other segement.
     // Use this value if another segment will checkin a guest for this segment via `SpecificSegments`
-    SingleSegment {},
+    SingleSegment {
+        id: u64,
+    },
     /// once checked in to this segment, guest is also checked into all other segments set here.
-    SpecificSegments { ids: Vec<u64> },
+    AnyOfSpecificSegments {
+        ids: Vec<u64>,
+    },
+    AllOfSpecificSegments {
+        ids: Vec<u64>,
+    },
 }
 
 pub fn preamble_msg_arb_036(signer: &str, data: &str) -> String {

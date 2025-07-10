@@ -2,7 +2,8 @@ use cosmwasm_schema::{cw_serde, QueryResponses};
 use cw4::Member;
 
 use crate::state::{
-    CheckInDetails, Config, EventSegment, GuestDetails, RegisteringGuest, TicketPaymentOption,
+    CheckInDetails, Config, EventSegment, GuestDetails, RegisteringGuest, ReplaceHomieTicket,
+    TicketPaymentOption,
 };
 
 #[cw_serde]
@@ -28,10 +29,26 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // /// Cw20 Entry Point
     // Receive(Cw20ReceiveMsg),
-    PurchaseTickets { guests: Vec<RegisteringGuest> },
-    CheckInGuest { checkin: CheckInDetails },
-    RefundUnconfirmedTickets { guests: Vec<String> },
+    PurchaseTickets {
+        guests: Vec<RegisteringGuest>,
+    },
+    CheckInGuest {
+        checkin: CheckInDetails,
+    },
+    RefundUnconfirmedTickets {
+        guests: Vec<String>,
+    },
     ClaimTicketPayments {},
+    /// Claim your ticket that your homie has purchased for you.
+    /// They will not be able to check you in once you claimed your ticket
+    ClaimTicketReservedByHomie {
+        homie_addr: String,
+    },
+    UpdateTicketAddress {
+        /// Optional value to update your own. Left empty 
+        new_ticket_addr: Option<String>,
+        replace_homies_ticket: Vec<ReplaceHomieTicket>,
+    },
 }
 
 #[cw_serde]

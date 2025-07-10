@@ -44,6 +44,11 @@ use crate::interfaces::CwAveSuite;
 // CHECKIN GUEST
 // only event ushers can checkin guest
 
+/// EVENT SEGMENT ACCESS
+/// - single - works normal
+/// - single - errors on incorrect segment for a guest
+/// 
+
 struct TestEnv<Env: CwEnv> {
     mock: Env,
     suite: CwAveSuite<Env>,
@@ -74,7 +79,7 @@ impl TestEnv<MockBech32> {
             max_ticket_limit: 5,
             total_ticket_limit: 100,
             ticket_cost: vec![coin(1000000, "ujuno")],
-            event_segment_access: EventSegmentAccessType::SingleSegment {},
+            event_segment_access: EventSegmentAccessType::SingleSegment { id: 0 },
         }];
 
         // Create sample event timeline
@@ -141,7 +146,7 @@ fn test_duplicate_guest_weight_fails() -> anyhow::Result<()> {
             max_ticket_limit: 5,
             total_ticket_limit: 100,
             ticket_cost: vec![coin(1000000, "ujuno")],
-            event_segment_access: EventSegmentAccessType::SingleSegment {},
+            event_segment_access: EventSegmentAccessType::SingleSegment { id: 0 },
         },
         GuestDetails {
             guest_type: "Regular".to_string(),
@@ -149,7 +154,7 @@ fn test_duplicate_guest_weight_fails() -> anyhow::Result<()> {
             max_ticket_limit: 10,
             total_ticket_limit: 500,
             ticket_cost: vec![coin(500000, "ujuno")],
-            event_segment_access: EventSegmentAccessType::SingleSegment {},
+            event_segment_access: EventSegmentAccessType::SingleSegment { id: 0 },
         },
     ];
 
@@ -194,7 +199,7 @@ fn test_invalid_event_dates_fails() -> anyhow::Result<()> {
         max_ticket_limit: 5,
         total_ticket_limit: 100,
         ticket_cost: vec![coin(1000000, "ujuno")],
-        event_segment_access: EventSegmentAccessType::SingleSegment {},
+        event_segment_access: EventSegmentAccessType::SingleSegment { id: 0 },
     }];
 
     // Create event timeline with invalid dates (start > end)
@@ -239,7 +244,7 @@ fn test_overlapping_event_dates_fails() -> anyhow::Result<()> {
         max_ticket_limit: 5,
         total_ticket_limit: 100,
         ticket_cost: vec![coin(1000000, "ujuno")],
-        event_segment_access: EventSegmentAccessType::SingleSegment {},
+        event_segment_access: EventSegmentAccessType::SingleSegment { id: 0 },
     }];
 
     // Create overlapping event timeline

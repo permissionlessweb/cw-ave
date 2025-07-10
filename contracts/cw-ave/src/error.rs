@@ -15,6 +15,15 @@ pub enum ContractError {
     #[error("Cannot set duplicate guest weights.")]
     DuplicateGuestWeight {},
 
+    #[error("Cannot reserve more than one ticket for the same homie.")]
+    DuplicateHomiesTicketAddr {},
+
+    #[error("Cannot reserve more than 10 tickets for da homies.")]
+    TooManyHomieTickets {},
+
+    #[error("Verification has failed checking in. Ensure you are using the correct format")]
+    CheckinVerificationFailed {},
+
     #[error("You are trying to reserve more than the limit for a single wallet.")]
     CannotReserveTicketCount {},
 
@@ -59,4 +68,7 @@ pub enum ContractError {
 
     #[error("guest has already checked in.")]
     GuestAlreadyCheckedIn {},
+
+    #[error("this guest is not allowed to checkin for this specific event segment.")]
+    IncorrectEventSegmentId {},
 }

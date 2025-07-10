@@ -6,7 +6,7 @@
 
 import { CosmWasmClient, SigningCosmWasmClient, ExecuteResult } from "@cosmjs/cosmwasm-stargate";
 import { StdFee } from "@cosmjs/amino";
-import { Timestamp, Uint64, EventSegmentAccessType, Uint128, InstantiateMsg, EventSegment, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegmentRes, EventSegmentRes, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
+import { Timestamp, Uint64, EventSegmentAccessType, Uint128,  EventSegment, GuestDetails, Coin, Member, ExecuteMsg, Binary, RegisteringGuest, RegisteringEventAddressAndPayment, CheckInDetails, QueryMsg, ArrayOfTicketPaymentOption, TicketPaymentOption, Addr, Config, ArrayOfEventSegmentRes, EventSegmentRes, Boolean, ArrayOfBoolean, ArrayOfGuestDetails } from "./CwAve.types";
 export interface CwAveReadOnlyInterface {
   contractAddress: string;
   config: () => Promise<Config>;

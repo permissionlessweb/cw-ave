@@ -2,9 +2,9 @@ use crate::error::ContractError;
 use crate::msg::{EventSegmentRes, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{
     generate_instantiate_salt2, preamble_msg_arb_036, sha256, CheckInDetails, CheckInSignatureData,
-    Config, GuestDetails, RegisteringEventAddressAndPayment, RegisteringGuest, TicketPaymentOption,
-    ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS, LICENSE_ADDR, RESERVED_TICKETS,
-    TOTAL_RESERVED_BY_GUEST,
+    Config, GuestDetails, RegisteringEventAddressAndPayment, RegisteringGuest, ReplaceHomieTicket,
+    TicketPaymentOption, ATTENDANCE_RECORD, CONFIG, EVENT_STAGES, GUEST_DETAILS, HOMIE_TICKETS,
+    LICENSE_ADDR, RESERVED_TICKETS, TOTAL_RESERVED_BY_GUEST_TYPE,
 };
 use av_event_helpers::{get_license_addr, LICENSE_CANONICAL_ADDR};
 #[cfg(not(feature = "library"))]
@@ -12,10 +12,11 @@ use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
     coin, from_json, instantiate2_address, to_json_binary, Addr, BankMsg, Binary, CanonicalAddr,
-    Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult, Storage, WasmMsg,
+    Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order, Response, StdError, StdResult,
+    Storage, WasmMsg,
 };
 use cw2::set_contract_version;
-use cw4::Member;
+use cw4::{Cw4QueryMsg, Member, MemberResponse};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-ave";
@@ -63,7 +64,7 @@ pub fn instantiate(
                 }
 
                 GUEST_DETAILS.save(deps.storage, dt.guest_weight, &dt)?;
-                TOTAL_RESERVED_BY_GUEST.save(deps.storage, dt.guest_weight, &0)?;
+                TOTAL_RESERVED_BY_GUEST_TYPE.save(deps.storage, dt.guest_weight, &0)?;
             }
         }
     }
@@ -147,6 +148,7 @@ pub fn instantiate(
         deps.storage,
         &Config {
             title: msg.title,
+            description: msg.description,
             curator,
             event_usher_contract,
             event_guest_contract,
@@ -170,6 +172,13 @@ pub fn execute(
         }
         ExecuteMsg::CheckInGuest { checkin } => perform_checkin_guest(deps, info, checkin),
         ExecuteMsg::ClaimTicketPayments {} => perform_claim_ticket_payments(deps, env, info),
+        ExecuteMsg::ClaimTicketReservedByHomie { homie_addr } => {
+            perform_claim_ticket_reserved_by_homie(deps, info, homie_addr)
+        }
+        ExecuteMsg::UpdateTicketAddress {
+            new_ticket_addr,
+            replace_homies_ticket,
+        } => perform_update_ticket_wallet(deps, info, new_ticket_addr, replace_homies_ticket),
     }
 }
 
@@ -229,6 +238,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
                 .map(|res| res.map(|(_, guest_details)| guest_details))
                 .collect::<StdResult<Vec<GuestDetails>>>()?,
         )?),
+        // QueryMsg::GuestTicketsByReservedWeight { guest } => RESERVED_TICKETS.load(store, k),
     }
 }
 
@@ -249,11 +259,11 @@ pub fn perform_ticket_purchase(
     for guest in guests {
         // check if guest type exists
         let gd = GUEST_DETAILS.load(deps.storage, guest.guest_weight)?;
-        let count = TOTAL_RESERVED_BY_GUEST.load(deps.storage, gd.guest_weight)?;
-
+        let count = TOTAL_RESERVED_BY_GUEST_TYPE.load(deps.storage, gd.guest_weight)?;
+        let to_reserve = guest.reap.len();
         // Calculate how many tickets we can actually process (respecting the limit)
         let max_possible = gd.total_ticket_limit.saturating_sub(count) as usize;
-        let process_count = guest.reap.len().min(max_possible);
+        let process_count = to_reserve.min(max_possible);
 
         // Split the guest list - prioritize first entries in the array
         let to_process = &guest.reap[..process_count];
@@ -262,7 +272,7 @@ pub fn perform_ticket_purchase(
         // if !overflow.is_empty() {
         // }
 
-        // if len of guest.reap is greater than gd.limit, strip the # of entries in guest.reap from the object so that we will reach the limit and not error.
+        // if tickets being reserved are greater than limit for this guest type, strip the # of entries in the tickets being reserved from the object so that we will reach the limit and not error.
         let (reserved, remaining_funds, dev_fee_msg) = count_tickets_and_remainder(
             LICENSE_ADDR.load(deps.storage)?.to_string(),
             &info.funds,
@@ -270,16 +280,15 @@ pub fn perform_ticket_purchase(
             to_process,
         );
 
+        // return any overflow funds sent.
         msgs.extend([
             form_return_payment_overflow_msgs(&remaining_funds, &info.sender),
             dev_fee_msg,
         ]);
 
-        let count = guest.reap.len();
-        // save tickets reserved by the ticket wallet
         RESERVED_TICKETS.update(deps.storage, &gd.guest_weight, |a| match a {
             Some(mut td) => {
-                td += count as u128;
+                td += to_reserve as u128;
                 if td > gd.max_ticket_limit.into() {
                     return Err(ContractError::CannotReserveTicketCount {});
                 }
@@ -295,8 +304,14 @@ pub fn perform_ticket_purchase(
         })?;
 
         msgs.push(
-            form_update_guestlist_msg(&guest.reap, gd.guest_weight, &cfg.event_guest_contract)?
-                .into(),
+            form_update_guestlist_msg(
+                &info.sender,
+                deps.storage,
+                &guest.reap,
+                gd.guest_weight,
+                &cfg.event_guest_contract,
+            )?
+            .into(),
         );
     }
     Ok(Response::new())
@@ -320,7 +335,7 @@ pub fn perform_checkin_guest(
         &checkin.signature,
         &checkin.pubkey,
     )? {
-        return Err(ContractError::DuplicateGuestWeight {});
+        return Err(ContractError::CheckinVerificationFailed {});
     };
 
     // parse signed_data to retrieve specific guest weight
@@ -350,21 +365,24 @@ pub fn perform_checkin_guest(
 
         // recurisvely update guest status for specific segment
         match guest_details.event_segment_access {
-            crate::state::EventSegmentAccessType::SingleSegment {} => {
-                update_attendance_record(
-                    deps.storage,
-                    &checkin.ticket_addr,
-                    signature_data.event_segment_id,
-                )?;
+            crate::state::EventSegmentAccessType::SingleSegment { id } => {
+                if !signature_data.event_segment_ids.contains(&id) {
+                    return Err(ContractError::IncorrectEventSegmentId {});
+                }
+                update_attendance_record(deps.storage, &checkin.ticket_addr, id)?;
             }
-            crate::state::EventSegmentAccessType::SpecificSegments { ids } => {
-                update_attendance_record(
-                    deps.storage,
-                    &checkin.ticket_addr,
-                    signature_data.event_segment_id,
-                )?;
-                for id in ids {
-                    update_attendance_record(deps.storage, &checkin.ticket_addr, id)?;
+            crate::state::EventSegmentAccessType::AnyOfSpecificSegments { ids } => {
+                for checkin_id in signature_data.event_segment_ids {
+                    if !ids.contains(&checkin_id) {
+                        return Err(ContractError::IncorrectEventSegmentId {});
+                    }
+                    update_attendance_record(deps.storage, &checkin.ticket_addr, checkin_id)?;
+                }
+            }
+            crate::state::EventSegmentAccessType::AllOfSpecificSegments { ids } => {
+                // we just checkin all automatically
+                for checkin_id in ids {
+                    update_attendance_record(deps.storage, &checkin.ticket_addr, checkin_id)?;
                 }
             }
         }
@@ -447,6 +465,8 @@ fn count_tickets_and_remainder(
 }
 
 fn form_update_guestlist_msg(
+    sender: &Addr,
+    storage: &mut dyn Storage,
     guest_addrs: &[RegisteringEventAddressAndPayment],
     guest_weight: u64,
     gust_cw420: &Addr,
@@ -457,11 +477,29 @@ fn form_update_guestlist_msg(
             remove: vec![],
             add: guest_addrs
                 .iter()
-                .map(|a| Member {
-                    addr: a.ticket_addr.to_string(),
-                    weight: guest_weight,
+                .map(|a| -> Result<Member, StdError> {
+                    let ticket = a.ticket_addr.clone();
+                    if sender.as_str() != &ticket {
+                        HOMIE_TICKETS.update(storage, &sender.to_string(), |b| match b {
+                            Some(mut c) => {
+                                if c.contains(&ticket) {
+                                    return Err(StdError::generic_err(
+                                        "This ticket is already registered for homies",
+                                    ));
+                                } else {
+                                    c.push(ticket.clone());
+                                    Ok(c)
+                                }
+                            }
+                            None => Ok(vec![ticket.clone()]),
+                        })?;
+                    }
+                    Ok(Member {
+                        addr: ticket,
+                        weight: guest_weight,
+                    })
                 })
-                .collect(),
+                .collect::<Result<Vec<Member>, StdError>>()?,
         })?,
         funds: vec![],
     })
@@ -523,4 +561,125 @@ pub fn perform_claim_ticket_payments(
         to_address: config.curator.to_string(),
         amount: balances,
     }))
+}
+
+/// allows a wallet that was reserved a ticket from another wallet to claim their ticket,
+/// preventing the chance of the homie checkin-in on their behalf.
+pub fn perform_claim_ticket_reserved_by_homie(
+    deps: DepsMut,
+    info: MessageInfo,
+    reserver: String,
+) -> Result<Response, ContractError> {
+    HOMIE_TICKETS.update(
+        deps.storage,
+        &reserver,
+        |current_list| -> Result<_, StdError> {
+            match current_list {
+                Some(mut list) => {
+                    if let Some(pos) = list.iter().position(|x| x == &info.sender.to_string()) {
+                        list.remove(pos);
+                    }
+                    Ok(list)
+                }
+                None => Err(StdError::generic_err("this homie did not reserve a ticket for your current wallet address.. maybe try a different wallet?")),
+            }
+        },
+    )?;
+
+    Ok(Response::new().add_attribute("claimed_homie_ticket", info.sender.to_string()))
+}
+
+/// allows a wallet has a ticket reserved to update the address to use to checkin.
+pub fn perform_update_ticket_wallet(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_ticket_addr: Option<String>,
+    homies_to_update: Vec<ReplaceHomieTicket>,
+) -> Result<Response, ContractError> {
+    if homies_to_update.len() > 10 {
+        return Err(ContractError::TooManyHomieTickets {});
+    }
+    let guest_cw420 = CONFIG.load(deps.storage)?.event_guest_contract;
+
+    let querier = deps.querier;
+
+    let res: MemberResponse = querier.query_wasm_smart(
+        &guest_cw420,
+        &Cw4QueryMsg::Member {
+            addr: info.sender.to_string(),
+            at_height: None,
+        },
+    )?;
+
+    if let Some(weight) = res.weight {
+        let sender = info.sender.to_string();
+        let mut list = vec![];
+        if let Some(homies) = HOMIE_TICKETS.may_load(deps.storage, &sender)? {
+            homies.iter().for_each(|h| {
+                if let Some(update) = homies_to_update.iter().position(|htu| &htu.old == h) {
+                    list.push(homies_to_update[update].new.clone());
+                } else {
+                    list.push(h.to_string());
+                }
+            });
+        }
+
+        let mut to_add = Vec::new();
+        let mut to_remove = Vec::new();
+
+        // remap any homie tickets to new address
+        if list.len() > 0 {
+            let mut ticket_addr = sender.clone();
+            if let Some(new) = new_ticket_addr {
+                HOMIE_TICKETS.remove(deps.storage, &ticket_addr);
+                ticket_addr = new;
+                to_remove.push(sender);
+                to_add.push(Member {
+                    addr: ticket_addr.clone(),
+                    weight,
+                });
+            }
+            HOMIE_TICKETS.save(deps.storage, &ticket_addr, &list)?;
+        }
+
+        // get weights for each addr
+        for homie in homies_to_update {
+            let res: MemberResponse = querier.query_wasm_smart(
+                &guest_cw420,
+                &Cw4QueryMsg::Member {
+                    addr: info.sender.to_string(),
+                    at_height: None,
+                },
+            )?;
+            if let Some(weight) = res.weight {
+                to_add.push(Member {
+                    addr: homie.new,
+                    weight,
+                });
+                to_remove.push(homie.old);
+            }
+        }
+
+        Ok(
+            Response::new().add_message(form_cw420_msg(
+                guest_cw420.to_string(),
+                to_add,
+                to_remove,
+            )?),
+        )
+    } else {
+        return Err(ContractError::NoReservedTicketsForGuest {});
+    }
+}
+
+fn form_cw420_msg(
+    contract_addr: String,
+    add: Vec<Member>,
+    remove: Vec<String>,
+) -> Result<WasmMsg, ContractError> {
+    Ok(WasmMsg::Execute {
+        contract_addr,
+        msg: to_json_binary(&cw420::msg::ExecuteMsg::UpdateMembers { remove, add })?,
+        funds: vec![],
+    })
 }

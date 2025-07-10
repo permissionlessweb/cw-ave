@@ -89,7 +89,7 @@ fn create_valid_ave_instantiate_msg(cw420_code_id: u64) -> AvEventInstantiateMsg
                     denom: NATIVE_DENOM.to_string(),
                     amount: Uint128::new(1000),
                 }],
-                event_segment_access: EventSegmentAccessType::SingleSegment {},
+                event_segment_access: EventSegmentAccessType::SingleSegment { id: 0u64 },
                 total_ticket_limit: 10,
             },
             GuestDetails {
@@ -101,7 +101,7 @@ fn create_valid_ave_instantiate_msg(cw420_code_id: u64) -> AvEventInstantiateMsg
                     amount: Uint128::new(500),
                 }],
                 total_ticket_limit: 10,
-                event_segment_access: EventSegmentAccessType::SingleSegment {},
+                event_segment_access: EventSegmentAccessType::SingleSegment { id: 1u64 },
             },
         ],
         cw420: cw420_code_id,
@@ -459,7 +459,7 @@ fn test_list_contracts_pagination() {
                     amount: Uint128::new(500),
                 }],
                 total_ticket_limit: 10,
-                event_segment_access: EventSegmentAccessType::SingleSegment {},
+                event_segment_access: EventSegmentAccessType::SingleSegment { id: 0u64 },
             }],
             cw420: cw420_code_id,
             event_timeline: vec![EventSegment {
@@ -650,7 +650,7 @@ fn test_query_by_instantiator_reverse() {
                     amount: Uint128::new(500),
                 }],
                 total_ticket_limit: 10,
-                event_segment_access: EventSegmentAccessType::SingleSegment {},
+                event_segment_access: EventSegmentAccessType::SingleSegment { id: 0u64 },
             }],
             cw420: cw420_code_id,
             event_timeline: vec![EventSegment {
@@ -843,7 +843,7 @@ fn test_invalid_guest_details() {
                 denom: NATIVE_DENOM.to_string(),
                 amount: Uint128::new(500),
             }],
-            event_segment_access: EventSegmentAccessType::SingleSegment {},
+            event_segment_access: EventSegmentAccessType::SingleSegment { id: 0u64 },
         }],
         cw420: cw420_code_id,
         event_timeline: vec![
