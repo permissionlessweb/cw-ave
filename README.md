@@ -96,4 +96,4 @@ Explore investor DAO structure: https://docs.daodao.zone/
 3% of all ticket sales
 
 ## License
-This project is licensed under the BSD 3-Clause License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.
